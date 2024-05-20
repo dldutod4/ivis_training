@@ -7,13 +7,13 @@ class Array
 private:
     friend Operand;
 
-    //
+    //행렬의 차원을 저장
     int dimension;
 
-    //
+    //각 차원의 크기를 저장
     int* dimension_size;
 
-    //
+    //모든 원소를 1차원 행렬에 저장
     int* elements;
 
 public:
@@ -34,6 +34,7 @@ Array::Array(int dim, int* dim_s) : dimension(dim), dimension_size(dim_s)
     {
         total_size *= dim_s[i];
     }
+    std::cout << total_size << " size array created" << std::endl;
     elements = new int[total_size];
 }
 
@@ -50,6 +51,7 @@ void Array::dim_3_arr_show()
         return;
     }
 
+    int a = 0;
     for (size_t i = 0; i < dimension_size[0]; i++)
     {
         std::cout << "**arr[" << i << "]" << std::endl;
@@ -58,7 +60,8 @@ void Array::dim_3_arr_show()
             std::cout << "*array[" << i << "][" << j << "] : ";
             for (size_t k = 0; k < dimension_size[2]; k++)
             {
-            std::cout << elements[dimension_size[1]*(dimension_size[2]*i+j)+k] << " ";
+                std::cout << elements[a] << " ";
+                a++;
             }
             std::cout << std::endl;
         }
@@ -83,11 +86,13 @@ public:
 
 Operand::Operand(Array* arr, int lev, int loc, int idx) : array(arr), level(lev), location(loc)
 {
-    if(level != array->dimension)
-        location = array->dimension_size[array->dimension - level] * (idx + location);
-    else
+    //행렬의 마지막 차원에 도달하면 더 이상 곱할 변수가 없이 idx를 바로 더하면된다.
+    if(level == array->dimension)
         location += idx;
-    std::cout << location << std::endl;
+
+    //차원이 증가할때마다 각 차원의 다음 차원의 크기 만큼 곱해서 더해야 한다.
+    else
+        location = ((idx + location) * array->dimension_size[level]);
 }
 
 Operand::~Operand()
@@ -106,17 +111,19 @@ Operand Array::operator[](const int idx)
 
 void Operand::operator=(const int& a)
 {
+    int temp = array->elements[location];
     array->elements[location] = a;
+    std::cout << "located at " << location << " changed " << temp << " to " << a << std::endl;
 }
 
 int main()
 {
     int dim = 3;
-    int dim_s[3] = {2, 3, 4};
+    int dim_s[3] = {3, 5, 7};
     int a = 1;
 
     Array arr(dim, dim_s);
-
+    arr.dim_3_arr_show();
     
     for (size_t i = 0; i < dim_s[0]; i++)
     {
@@ -124,13 +131,12 @@ int main()
         {
             for (size_t k = 0; k < dim_s[2]; k++)
             {
-                arr[i][j][k] = a++;
+                arr[i][j][k] = a;
+                a++;
             }
         }
     }
-    
 
-    arr[1][2][3] = 3;
     arr.dim_3_arr_show();
     return 0;
 }

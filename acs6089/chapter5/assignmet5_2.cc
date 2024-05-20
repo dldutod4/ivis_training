@@ -30,9 +30,13 @@ class Array
   public:
   //Array 생성자
   Array(int dim, int* dim_s);
+  ~Array();
   
   //초기화 재귀 함수
   void initialize_nodes(Node* current);
+
+  //재귀 소멸자
+  void delete_nodes(Node* current);
 
   //각 원소에 접근하는 함수
   int* iterator(int* location);
@@ -95,6 +99,21 @@ void Array::initialize_nodes(Node* current)
     initialize_nodes(static_cast<Node*>(current->next_node) + i);
   }
 };
+
+Array::~Array()
+{
+
+  delete[] dimension_size;
+}
+
+//초기화 때와는 다르게 아래 Node부터 초기화해야한다.
+void Array::delete_nodes(Node* current)
+{
+  //입력 받은 Node가 아무런 정보가 없는 깡통일때 종료
+  if(current == NULL)return;
+
+
+}
 
 //각 원소에 접근하는 함수
 int* Array::iterator(int* location)
