@@ -1,0 +1,33 @@
+깃에 충돌이 발생하여 문제가 발생하여 rebase해야할 경우
+
+1. 오류 발생을 인지한다
+! [rejected]        dev -> dev (fetch first)
+error: failed to push some refs to '../../remoteRepository/gitPractice.git'
+
+2. $git fetch 를 이용하여 Remote 저장소에 있는 데이터를 내려 받는다.
+
+3. $git lg --all 를 이용하여 다른 업데이트 사항 commit을 확인한다.
+
+4. 세부 교체 사항을 알아 내기 위해 $git diff origin/dev origin/dev~1 를 이용한다
+
+5. 세부 변경 사항을 적용하기 위해 먼저 $git rebase 를 입력한다.
+
+6. 세부 변경 사항을 직접 편집한다.
+
+7. 편집이 완료되면 $git add . 를 이용해 적용한다.
+
+8. $git rebase --continue 를 이용해 파생 브랜치를 메인 브렌치에 다시 붙인다
+
+9. $git push 를 이용해 수정 완료한 브랜치를 Remote 저장소에 업데이트 한다.
+
+
+case1. 작업중 이미 여러개의 파일을 git add 했는데 일부 파일을 빼고 git add 해달라는 요청이 있을 시
+git add를 시행하면 index 영역에 파일들이 올라간다. 따라서 git rebase HEAD --mixed 를 시행하면 git add 된 작업들만 날라가고 작업 중인 파일들은 그대로 존재한다. but $git rebase HEAD --hard 즉 하드 옵션을 사용하면 HEAD에 해당하는 부분으로 파일도 모두 삭제됨으로 주의
+
+case2. 메인 브렌치 이후 workspace에서 작업 중에 과거로 돌아가서 다시 작업해야할 시 주의사항
+현재 작업중인 workspace의 branch 없이 작업 중에 특정 commmit id로 돌아가면 현재 workspace가 사라질 수 있다. 따라서 별도의 브렌치를 잘 작성해 두어 workspace가 없어지는 일이 없도록 하자. 유사시에 git reflog 로 이전에 작업하던 workspace가 남아 있을 수 있으나 꼬일 수 있으니 가급적이면 주의하자
+
+case3. 과거 commit id로 돌아가서 작업 중 특정 commit id의 특정 파일이 필요할시
+git checkout <commit id> <file> 명령어로 해당 파일을 업데이트하거나 불러온다
+
+case4. 좀 더 GUI로 보기 편할것 같으면 gitk --all을 사용하자
