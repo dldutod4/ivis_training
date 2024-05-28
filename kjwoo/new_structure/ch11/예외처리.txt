@@ -1,0 +1,141 @@
+잘못된 메모리 접근이라던가
+너무 큰 메모리를 할당했다던가
+문법상 틀린것은 없지만 정상에서 벗어난 예외적 상황을
+exception이라 함.
+
+c언어식 예외처리
+
+char *c = (char *)malloc(1000000000);
+if (c == NULL) {
+  printf("메모리 할당 오류!");
+  return;
+}
+
+throw문
+
+예외발생시키기
+template <typename T>
+class Vector {
+ public:
+  Vector(size_t size) : size_(size) {
+    data_ = new T[size_];
+    for (int i = 0; i < size_; i++) {
+      data_[i] = 3;
+    }
+  }
+  const T& at(size_t index) const {
+    if (index >= size_) {
+      throw out_of_range("vector 의 index 가 범위를 초과하였습니다.");
+    }
+    return data_[index];
+  }
+  ~Vector() { delete[] data_; }
+
+ private:
+  T* data_;
+  size_t size_;
+};
+
+예외가 발생한것을 명시적으로 나타낼 수 있다.
+throw는 객체를 전달하는데 throw위치에서 함수가 즉시 종료되고
+아무객체나 전달해도 상관없지만 기본적으로 예외용객체들이 정의돼있다.
+
+예외처리부분으로 점프하게된다.
+throw 밑의 모든 문장은 실행되지않는다.
+게다가 예외처리하는 부분까지 함수를 빠져나가면서 객체들을 빠짐없이 소멸시켜준다.
+
+예외처리 try - catch
+
+try {
+    data = vec.at(index);
+  } catch (std::out_of_range& e) {
+    std::cout << "예외 발생 ! " << e.what() << std::endl;
+  }
+  // 예외가 발생하지 않았다면 3을 이 출력되고, 예외가 발생하였다면 원래 data 에
+  // 들어가 있던 0 이 출력된다.
+  std::cout << "읽은 데이터 : " << data << std::endl;
+
+try에서 throw가 발생했다면 즉시 stack의 객체들의 소멸자들이 호출되고
+가장 가까운 catch문으로 점프한다.
+catch문 안에 정의된 예외의 꼴에 맞는 객체를 받게된다.
+
+out_of_range 클래스는 아주 간단한데, 그냥 내부에 발생엔 예외에 관한 내용을 저장하는 문자
+열 필드가 달랑 하나 있고 이 역시 what() 함수로 그 값을 들여다 볼 수 있습니다. 위 경우 
+우리가 전달한 문장인 'vector의 index가 범위를 초과하였습니다' 가 나오게 됩니다. 
+
+스택 풀기 (stack unwinding)
+
+
+int func3() {
+  Resource r(3);
+  throw std::runtime_error("Exception from 3!\n");
+}
+int func2() {
+  Resource r(2);
+  func3();
+  std::cout << "실행 안됨!" << std::endl;
+  return 0;
+}
+int func1() {
+  Resource r(1);
+  func2();
+  std::cout << "실행 안됨!" << std::endl;
+  return 0;
+}
+
+int main() {
+  try {
+    func1();
+  } catch (std::exception& e) {
+    std::cout << "Exception : " << e.what();
+  }
+}
+
+func1->func2->func3 실행중 예외발생
+func3종료후 r(3) 소멸
+func2종료후 r(2) 소멸
+func1종료후 r(1) 소멸
+//함수 종료할때 남은 명령문을 실행하지 않음.
+가장 가까운 main문 catch문으로 점프
+
+catch문을 여러개 받기
+
+전달한 객체 종류별로 다르게 에러 처리가 가능하다.
+단 상속받은 개체가 리턴될 경우 가장 먼저 대입되는 객체를 받기때문에 자식이어도 부모객체로 받아버릴 수 있다.
+즉 예외처리시에는 자식객체를 더 먼저써야 한다.
+
+
+  try {
+    func(c);
+  } catch (Parent& p) { //child 객체가 전달돼도 parent 예외문이 받음!
+    std::cout << "Parent Catch!" << std::endl;
+    std::cout << p.what();
+  } catch (Child& c) {
+    std::cout << "Child Catch!" << std::endl;
+    std::cout << c.what();
+  }
+
+  모든예외받기
+   try {
+    func(c);
+  } catch (int e) {
+    std::cout << "Catch int : " << e << std::endl;
+  } catch (...) {
+    std::cout << "Default Catch!" << std::endl;
+  }
+else와 같다고 보면됨.
+  catch(...){
+
+  }
+
+  예외를 발생시키지 않는 함수 - noexcept
+#include <iostream>
+
+int foo() noexcept {}
+
+int bar(int x) noexcept { throw 1; }
+
+int main() { foo(); }
+
+noexcept로 명시된 함수가 예외를 발생시키면 예외가 제대로 처리되지않고 프로그램이 종료된다.
+C++ 11 에서 부터 소멸자들은 기본적으로 noexcept 입니다. 절대로 소멸자에서 예외를 던지면 안됩니다.

@@ -1,0 +1,142 @@
+c++ 표준 템플릿 라이브러리
+입출력,시간,정규표현식 등이 있지만
+3개의 라이브러리가 대표적
+컨테이너, 반복자, 알고리즘
+
+컨테이너
+시퀀스 컨테이너 -> 객체들을 순차적으로 보관
+vector, list, deque 3개가 정의됨
+
+복잡도 -> 빅오 표기법 skip
+
+벡터의경우 원소접근은 o(1)
+.at(x) 나 [x] 로 접근가능
+push_back, pop_back 함수 지원
+
+원소를 추가하는 작업은 amortized o(1) //분할 상환
+보통 가진 원소 수 보다 더 많은 공간을 할당해 놓다가 추가시 o(1)이지만 할당 공간을 다채웠을 때 새 공간에 기존 원소를 복사해 o(n)이 걸린다.
+하지만 매우 드문 경우이므로 평균적으로 o(1)이다.
+
+임의의 위체 원소 추가 및 제거는 o(n)이다.
+
+연관컨테이너는 키를 바탕으로 대응되는 값을 찾아준다.
+
+반복자
+원소에 접근할 수 있는 포인터같은 객체
+
+벡터의경우 begin(), end() 반복자를 리턴
+begin() 첫번째 원소를 가리킴
+end() 마지막 원소 다음 위치를 가리킴
+
+왜 마지막 다음 위치를 가리킬까
+begin() == end()라면 원소가 없는 벡터를 나타낼수 있음
+원소가 하나있을 때
+begin -> 1을 가리키면
+end -> 2
+원소가 없을때
+begin -> 1
+end -> 1
+
+반복자는 포인터 처럼 사용이 가능하다
+vector<int>::iterator itr = vec.begin();
+*itr
+it++ 등
+
+템플릿에도 적용가능
+typename std::vector<T>::iterator itr
+단 vector<T>의 의존타입이므로 typename 키워드를 붙여 사용
+
+insert함수
+vec.insert(vec.begin()+2, 15)
+vec.begin()+2의 앞에 15를 추가한다.
+해당 자리에 15를 넣고 그자리에 있던것부터 한칸씩 뒤로 미룬다.
+
+erase함수
+vec.erase(vec.begin()+3); 반복자가 가리키는 요소 삭제.
+
+*insert나 erase를 하면 iterator가 무효화돼버린다.*
+
+for (std::vector<int>::size_type i = 0; i != vec.size(); i++) {
+  if (vec[i] == 20) {
+    vec.erase(vec.begin() + i);
+    i--;
+  }
+}
+size를 이용하면 일단 임시로 수정이 가능하다.
+
+const_iterator
+가리키고있는 원소의 값을 바꿀 수 없다.
+
+const_iterator는 cbegin(), cend() 함수로 얻을 수 있다.
+
+reverse_iterator
+뒤에서부터 시작해 앞으로 가는 특징이 있다.
+rbegin()과 rend()로 얻을 수 있다.
+rbegin()은 마지막 원소
+rend()는 첫 원소의 1칸 앞을 가리킨다.
+++하면 앞으로 간다.
+const_reverse_iterator도 존재하며 crbegin(), crend()로 얻는다.
+
+for (std::vector<int>::size_type i = vec.size() - 1; i >= 0; i--) {
+    std::cout << vec[i] << std::endl;
+}
+주의 점으로
+vec[i]에 인덱스는 부호없는 정수를 사용하기 때문에
+i=0에서 i--를 하면 가장큰 정수가 되어 종료가 되지않는다. 좋은방법은 역반복자를 쓰는 것.
+
+범위기반 for 문
+#include <iostream>
+#include <vector>
+
+int main() {
+  std::vector<int> vec;
+  vec.push_back(1);
+  vec.push_back(2);
+  vec.push_back(3);
+
+  // range-based for 문
+  for (int elem : vec) {
+    std::cout << "원소 : " << elem << std::endl;
+  }
+
+  return 0;
+}
+
+elem에 vec의 원소가 매 루프마다 복사돼 들어가게된다.
+
+리스트
+양방향 연결구조를 가진 자료형
+벡터와 달리 임의의 위치에 있는 원소에 바로 접근이 불가함.
+시작원소와 마지막 원소 위치만을 기억. 링크를 따라 가야 원소에 접근이 가능하다.
+추가와 제거 작업이 O(1)으로 매우 빠르게 수행될 수 있다. 원하는 위치 앞과 뒤에 있는 링크값만 바꿔주면 되기 때문.
+반복자가 BidirectionalIterator인데
+양방향으로 이동가능하지만 여러칸을 한번에 이동은 못한다.
+vector에서는 randomAccessIterator타입이다.
+
+for (std::list<int>::iterator itr = lst.begin(); itr != lst.end(); ++itr) {
+  // 만일 현재 원소가 20 이라면
+  // 그 앞에 50 을 집어넣는다.
+  if (*itr == 20) {
+    lst.insert(itr, 50);
+  }
+}
+insert 매우 빠름
+게다가 insert나 erase를 해도 반복자가 무효화되지않음
+
+덱 deque
+원소접근, 맨뒤, 맨앞 추가 모두 O(1)
+insert, erase O(n)에 작동하는데 벡터보다 빠르게
+그러나 덱은 메모리상에 연속적으로 존재하지않아 원소들의 저장된 곳정보를 보관하기위한 추가적 메모리가 필요
+실행속도를위해 메모리를 희생하는 컨테이너.
+
+여러개의 블록들로 구성되며
+블록들을 가리키는 주소 벡터가 존재한다.
+시작 블록은 끝에 시작데이터가. 끝블록에는 첫번째에 데이터가 존재하며
+원소 추가시 뒤에 계속해서 넣다가 꽉 차면 블록을 추가하면되기때문에 원소를 복사할 일이 없다.
+블록주소벡터가 꽉차면 새로운공간에 복사하긴하지만 훨씬빠르다
+
+
+push_back, push_front, pop_back, pop_front
+[], at 사용가능.
+
+

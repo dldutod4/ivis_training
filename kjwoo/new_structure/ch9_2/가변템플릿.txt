@@ -1,0 +1,49 @@
+가변길이 템플릿
+임의의 개수의 인자를 받는 함수를 구현할 수 있다.
+
+#include <iostream>
+
+template <typename T>
+void print(T arg){
+    std::cout <<arg <<std::endl;
+}
+
+template <typename T, typename... Types>
+void print(T arg, Types... args){
+    std::cout<<arg<<",";
+    print(args...);
+}
+
+typenames... Types 는 템플릿 파라미터 팩이라고 부르며 0개 이상의 템플릿 인자들을 나타낸다.
+
+예를들어 print(1,2.3,"Abc")를 호출하면
+인자가 여러개이므로 1번 print는 패스
+2번으로 가는데 첫인자가 1이므로 T arg는 int arg가되어 1을 출력하고 재귀적으로 나머지 인자를 받아 print(2.3,"Abc")를 호출
+다시 2번 print에서 T는 double이 되어 2.3을 출력한후 나머지 print("Abc")를 출력
+1번이 인자가 1개이므로 T가 const char*이 되어 "Abc"를 출력한다.
+
+
+sizeof... 전체인자의개수를 리턴함
+
+Fold Expression
+
+재귀함수 호출 종료를 위해 베이스케이스를 꼭 만들워줘야함 -> 쓸데없음
+c++17 신기술 Fold 형식
+template <typename... Ints>
+int sum_all(Ints... nums){
+    return (...+ nums);
+}
+
+int main(){
+    std::cout << sum_all(1, 4, 2, 3, 10) << std::endl;
+}
+
+fold 식 종류 // 괄호로 꼭 감싸줘야만 한다.
+(E op ...) //뒤부터 연산
+(... op E) //앞부터 연산
+(E op ... op I) // (num1 op 초기값)부터 뒤부터 연산
+(I op ... op E) // (초기값 op num1)부터 앞부터 연산
+
+E는 파라미터팩 I는 초기값을 의미한다
+
+(func(nums), ...); -> ,를 쓰면 각 인자마다 원하는 식을 실행할 수 있다.

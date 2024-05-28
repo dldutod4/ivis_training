@@ -1,0 +1,10 @@
+빌드 및 실행 방법
+
+아래 명령어를 압축을 풀고난뒤 순차적으로 실행
+
+mkdir build
+cd build
+cmake ..
+make
+./testCode
+

@@ -1,0 +1,118 @@
+클래스를 일부 자료형만 바꾼 똑같은 형태로 여러개를 만들고 싶을 때
+
+template <typename T>
+class Vector{
+    typedef T value_type; // 어떤 타입을 인자로 받았는지 알기위해 정의한다.
+    T* data
+public:
+    Vector(int n = 1) : data(new T[n]){}
+};
+
+특정 자료형에서 따로 정의하고 싶을 경우로 아래와 같이 한다.
+template <>
+class Vector<bool>{
+    ...
+};
+
+
+여러 타입을 인자로 넘길 수 있다.
+template <typename A,typename B, typename C>
+class Vector{
+    A data1;
+    B data2;
+    C data3;
+
+    ...
+};
+
+여러개 중 일부 인자만 지정해서 따로 정의할 수 있다.
+template <typename A, int, typename C>
+class Vector<A,int,C>{
+    ...
+}
+
+함수 템플릿
+
+따로 함수에서 <> 로 지정해 인스턴화
+template <typename T>
+T max(T& a, T& b){
+    return a > b ? a : b;
+}
+
+따로 함수에서 <> 로 지정해 인스턴화할필요없이 타입에따라 자동으로 인스턴스화 해준다
+max<int>(a,b)가 아니라 max(a,b)로 쓰면
+a,b의 자료형을 보고 알아서 지정해준다.
+
+함수객체의 도입
+template <typename Cont, typename Comp>
+
+void bubble_sort(Cont& cont, Comp& comp) {
+  for (int i = 0; i < cont.size(); i++) {
+    for (int j = i + 1; j < cont.size(); j++) {
+      if (!comp(cont[i], cont[j])) {
+        cont.swap(i, j);
+      }
+    }
+  }
+}
+
+여기서 Comp는 객체이고 ()연산자를 오버로딩한것이다. function object 줄여서 Functor라고 부른다.
+컴파일러가 operator()를 인라인화시켜 최적화하기때문에 매우빠르게 작동한다.
+struct Comp{
+    void operator() (inta, int b){
+        return a > b;
+    }
+}
+
+타입이 아닌 템플릿 인자
+template <typename T, int num>
+T add_num(T t){
+    return t + num;
+}
+
+int main() {
+  int x = 3;
+  std::cout << "x : " << add_num<int, 5>(x) << std::endl; //이 경우 num에 들어가는 값을 지정해야해서 <>가 필수적이다.
+}
+주의할 점으로는 이때 사용할 수 있는 인자의 타입이 제한적이다.
+bool char int long 정수타입
+enum타입
+널포인터 를 사용할 수 있다.
+
+함수에 배열을 전달할 때 배열의 크기정보를 잃어버리는 것이 문제점이었다.
+그러나 배열의 크기를 명시하면 해결이 가능한데
+std::array를 사용할 수 있다.
+
+#include<array>
+
+template <typename T>
+void print_array(const T& arr) {
+  for (int i = 0; i < arr.size(); i++) {
+    std::cout << arr[i] << " ";
+  }
+  std::cout << std::endl;
+}
+
+int main(){
+    std::array<int, 5> arr = {1, 2, 3, 4, 5};
+    std::array<
+
+    print_array(arr); //print_array가 arr의 타입인 array<int, 5>를 보고 위의 템플릿으로 인스턴스를 생성한다.
+
+}
+
+디폴트 템플릿 인자
+template <typename T, int num = 5>
+T add_num(T t){
+    return t+ num;
+}
+template <typename A, typename B>
+struct abc{
+    int operator() (int x, int y){
+        return y;
+    }
+}
+int main(){
+    int x = 3;
+    std::cout << "x : " << add_num(x) <<std::endl;
+}

@@ -1,0 +1,25 @@
+의존 타입
+
+template <typename T>
+int func() {
+  T::t* p;
+}
+
+class A {
+  const static int t;
+};
+
+class B {
+  using t = int;
+};
+
+func<A>라면 t* p 는 곱셈이지만
+func<B>라면 t* p 는 포인터변수선언이 된다.
+T::t가 어떤값인지 명확히 선언이 필요함.
+템플릿 인자에 따라 타입이 달라지는 것을 의존타입이라고 부른다.
+이 값이 타입인지 값인지 명확히 해줘야 알려줘야만함.
+
+unit 라이브러리
+
+auto 키워드
+

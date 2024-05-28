@@ -1,0 +1,146 @@
+<string>에 대해서
+
+basic_string
+std::string은 basic_string 클래스 템플릿의 인스턴스화 버전이다.
+
+basic_string은 charT타입의 객체들을 메모리에 연속적으로 저장하고
+ 여러 문자열 연산들을 지원해주는 클래스이다
+
+template <class CharT, class Traits = std::char_traits<CharT>,
+          class Allocator = std::allocator<CharT> >
+class basic_string;
+
+std::string은 사실
+std::basic_string<char> 이다.
+
+이외에도
+wstring
+basic_string<wchar_t>
+
+u8string
+basic_string<char8_t>
+
+u16string
+basic_string<char16_t>
+
+u32string
+basic_string<char32_t>
+
+Traits는 주어진 CharT문자들에 대해 기본적인 문자열 연산을 정의한 클래스이다.
+문자열의 대소비교나 길이재는법 등.
+
+문자열의 저장방법은 basic_string
+문자열들의 연산은 Traits에서 담당.
+
+이를 이용하면 다른 버전의 string을 만드는 것이 가능하다
+
+Traits클래스를 오버로딩해서 문자열 비교
+원래 아스키테이블에서 숫자들의 값이 알파벳보다 작다고 판단한다. 1a < a1
+이것을 반대로 바꾼 문자열을 만든다.
+
+짧은 문자열 최적화 SSO
+매번 길이가 짧은 문자열을 여러번 할당하면 속도가 느려서 비효율적이다.
+짧은 길이 문자열의 경우 메모리를 할당하지않고 객체자체에 저장한다 -> short string optimization
+
+문자열 리터럴 정의하기
+c++에서는 리터럴 연산자를 사용한다.
+using namespace std::literals{}
+auto str ="hello"s
+
+std::string operator"" s(const char *str, std::size_t len);
+Raw string literal
+
+std::string str = R"(asdfasdf
+이 안에는
+어떤 것들이 와도
+// 이런것도 되고
+#define hasldfjalskdfj
+\n\n <--- Escape 안해도 됨
+)";
+
+괄호 안에 오는 문자들은 모두 문자 그대로 char배열 안에 들어감
+\\, \", \n들도 그대로 입력된다.
+단 괄호는 안되는데 이또한 구분문자로 해결된다.
+std::string str = R"foo(      )"; <-- 무시됨       )foo";
+
+유니코드
+한글의 가 는 0xAC00
+
+0~0x7F까지는 아스키테이블과의 호환을 위해 동일.
+
+유니코드에 등록된 문자 개수는 약 14만개로 문자하나당 최소 int를 사용해야함
+그래서 인코딩 방식 등장.
+
+UTF-8 문자를 최소1부터 최대4바이트로 표현
+UTF-16 문자를 최소 2혹은 4바이트로 표현
+UTF-32 문자를 4바이트로 표현
+
+UTF-32는 u32string을 사용하며 
+
+std::u32string u32_str = U"이건 UTF-32 문자열 입니다";
+U를 붙여 생성.
+size()와 문자열의 실제길이가 일차함
+
+UTF-8은 웹에서 많이사용
+u8을 붙여 생성. 
+std::string str = u8"이건 UTF-8 문자열 입니다";
+size를 출력하면 32이다.
+최소단위가 1바이트이므로 문자별로 필요한 바이트가 다르다. 한글은 3바이트 나머지는 1바이트
+한글 8개, 영어,공백,- 가 8개 이므로
+3*8 + 1*8 = 32이다.
+
+UTF-16은 거의 대부분의 문자를 2바이트로 인코딩한다.
+한글과 같은 일반적인 문자는 2바이트이므로 size()와 문자열 길이가 일치한다.
+한글의 초성과 자음을 분리할수도 있다.
+
+
+for (char16_t c : u16_str) {
+    // 유니코드 상에서 한글의 범위
+    if (!(0xAC00 <= c && c <= 0xD7A3)) {
+      continue;
+    }
+    // 한글은 AC00 부터 시작해서 한 초성당 총 0x24C 개 씩 있다.
+    int offset = c - 0xAC00;
+    int jaum_offset = offset / 0x24C;
+    std::cout << jaum[jaum_offset];
+  }
+
+string_view 문자열 읽기만 필요한경우
+const std::string&나 const char*의 형태로 받게된다.
+string& 인자를 받는 함수에 문자열 리터럴을 전달하면
+string 객체를 생성하여 전달하고 불필요한 메모리할당이 발생한다.
+
+그렇다고 const char*형태로 바꾸면
+string을 직접 전달할수없어 string에서 const char* 주소를 뽑아 전달해야한다.
+그리고 그렇게하면 길이에대한 정보를 잃게된다.
+
+그래서 string&를 받는 함수를 효율적으로 만드려면 const string&를 받는 오버로딩과
+const char*을 인자로 받는 오버로딩을 각각 준비해야 했는데
+
+string view가 도입되어 해결되었다.
+
+string view는 읽기만 하는 클래스로 문자열을 소유하고 있지 않는다.
+현재 보고있는 문자열이 소멸되면 정의되지않은 작업이 발생한다. 
+-> 현재읽는 문자열이 소멸되어있지 않은지 확인해야한다
+
+string_view 객체는 생성시 메모리 할당이 불필요하다.
+
+#include <iostream>
+#include <string>
+
+void* operator new(std::size_t count) {
+  std::cout << count << " bytes 할당 " << std::endl;
+  return malloc(count);
+}
+
+int main() {
+  std::cout << "string -----" << std::endl;
+  std::string s = "sometimes string is very slow";
+  std::cout << "--------------------" << std::endl;
+  std::cout << s.substr(0, 20) << std::endl << std::endl;
+
+  std::cout << "string_view -----" << std::endl; //string_view는 메모리를 할당하지않는다.
+  std::string_view sv = s;
+  std::cout << "--------------------" << std::endl;
+  std::cout << sv.substr(0, 20) << std::endl;
+}
