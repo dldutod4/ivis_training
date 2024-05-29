@@ -49,6 +49,20 @@
         "streambuf": "cpp",
         "typeinfo": "cpp",
         "set": "cpp",
-        "map": "cpp"
+        "map": "cpp",
+        "ratio": "cpp",
+        "semaphore": "cpp",
+        "stop_token": "cpp",
+        "thread": "cpp",
+        "condition_variable": "cpp",
+        "mutex": "cpp",
+        "charconv": "cpp",
+        "chrono": "cpp",
+        "format": "cpp",
+        "iomanip": "cpp",
+        "span": "cpp",
+        "sstream": "cpp",
+        "variant": "cpp",
+        "queue": "cpp"
     }
 }

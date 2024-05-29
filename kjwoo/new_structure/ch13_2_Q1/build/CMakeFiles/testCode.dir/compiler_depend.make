@@ -25,6 +25,7 @@ CMakeFiles/testCode.dir/src/family.cpp.o: /home/kjwoo9467/training/ivis_training
   /usr/include/c++/13/bits/cpp_type_traits.h \
   /usr/include/c++/13/bits/cxxabi_forced.h \
   /usr/include/c++/13/bits/cxxabi_init_exception.h \
+  /usr/include/c++/13/bits/erase_if.h \
   /usr/include/c++/13/bits/exception.h \
   /usr/include/c++/13/bits/exception_defines.h \
   /usr/include/c++/13/bits/exception_ptr.h \
@@ -44,6 +45,7 @@ CMakeFiles/testCode.dir/src/family.cpp.o: /home/kjwoo9467/training/ivis_training
   /usr/include/c++/13/bits/move.h \
   /usr/include/c++/13/bits/nested_exception.h \
   /usr/include/c++/13/bits/new_allocator.h \
+  /usr/include/c++/13/bits/node_handle.h \
   /usr/include/c++/13/bits/ostream.tcc \
   /usr/include/c++/13/bits/ostream_insert.h \
   /usr/include/c++/13/bits/postypes.h \
@@ -63,9 +65,12 @@ CMakeFiles/testCode.dir/src/family.cpp.o: /home/kjwoo9467/training/ivis_training
   /usr/include/c++/13/bits/stl_iterator.h \
   /usr/include/c++/13/bits/stl_iterator_base_funcs.h \
   /usr/include/c++/13/bits/stl_iterator_base_types.h \
+  /usr/include/c++/13/bits/stl_multiset.h \
   /usr/include/c++/13/bits/stl_pair.h \
   /usr/include/c++/13/bits/stl_raw_storage_iter.h \
+  /usr/include/c++/13/bits/stl_set.h \
   /usr/include/c++/13/bits/stl_tempbuf.h \
+  /usr/include/c++/13/bits/stl_tree.h \
   /usr/include/c++/13/bits/stl_uninitialized.h \
   /usr/include/c++/13/bits/stl_vector.h \
   /usr/include/c++/13/bits/streambuf.tcc \
@@ -106,6 +111,7 @@ CMakeFiles/testCode.dir/src/family.cpp.o: /home/kjwoo9467/training/ivis_training
   /usr/include/c++/13/pstl/execution_defs.h \
   /usr/include/c++/13/pstl/glue_memory_defs.h \
   /usr/include/c++/13/pstl/pstl_config.h \
+  /usr/include/c++/13/set \
   /usr/include/c++/13/stdexcept \
   /usr/include/c++/13/streambuf \
   /usr/include/c++/13/string \
@@ -238,6 +244,7 @@ CMakeFiles/testCode.dir/src/main.cpp.o: /home/kjwoo9467/training/ivis_training/k
   /usr/include/c++/13/bits/cpp_type_traits.h \
   /usr/include/c++/13/bits/cxxabi_forced.h \
   /usr/include/c++/13/bits/cxxabi_init_exception.h \
+  /usr/include/c++/13/bits/erase_if.h \
   /usr/include/c++/13/bits/exception.h \
   /usr/include/c++/13/bits/exception_defines.h \
   /usr/include/c++/13/bits/exception_ptr.h \
@@ -257,6 +264,7 @@ CMakeFiles/testCode.dir/src/main.cpp.o: /home/kjwoo9467/training/ivis_training/k
   /usr/include/c++/13/bits/move.h \
   /usr/include/c++/13/bits/nested_exception.h \
   /usr/include/c++/13/bits/new_allocator.h \
+  /usr/include/c++/13/bits/node_handle.h \
   /usr/include/c++/13/bits/ostream.tcc \
   /usr/include/c++/13/bits/ostream_insert.h \
   /usr/include/c++/13/bits/postypes.h \
@@ -276,9 +284,12 @@ CMakeFiles/testCode.dir/src/main.cpp.o: /home/kjwoo9467/training/ivis_training/k
   /usr/include/c++/13/bits/stl_iterator.h \
   /usr/include/c++/13/bits/stl_iterator_base_funcs.h \
   /usr/include/c++/13/bits/stl_iterator_base_types.h \
+  /usr/include/c++/13/bits/stl_multiset.h \
   /usr/include/c++/13/bits/stl_pair.h \
   /usr/include/c++/13/bits/stl_raw_storage_iter.h \
+  /usr/include/c++/13/bits/stl_set.h \
   /usr/include/c++/13/bits/stl_tempbuf.h \
+  /usr/include/c++/13/bits/stl_tree.h \
   /usr/include/c++/13/bits/stl_uninitialized.h \
   /usr/include/c++/13/bits/stl_vector.h \
   /usr/include/c++/13/bits/streambuf.tcc \
@@ -319,6 +330,7 @@ CMakeFiles/testCode.dir/src/main.cpp.o: /home/kjwoo9467/training/ivis_training/k
   /usr/include/c++/13/pstl/execution_defs.h \
   /usr/include/c++/13/pstl/glue_memory_defs.h \
   /usr/include/c++/13/pstl/pstl_config.h \
+  /usr/include/c++/13/set \
   /usr/include/c++/13/stdexcept \
   /usr/include/c++/13/streambuf \
   /usr/include/c++/13/string \
@@ -516,11 +528,17 @@ CMakeFiles/testCode.dir/src/main.cpp.o: /home/kjwoo9467/training/ivis_training/k
 
 /usr/include/x86_64-linux-gnu/bits/atomic_wide_counter.h:
 
-/usr/include/c++/13/bits/stl_construct.h:
+/usr/include/stdlib.h:
 
-/usr/include/c++/13/bits/stl_algobase.h:
+/usr/include/stdio.h:
 
-/usr/include/c++/13/bits/shared_ptr_atomic.h:
+/usr/include/stdint.h:
+
+/usr/include/stdc-predef.h:
+
+/usr/include/sched.h:
+
+/usr/include/pthread.h:
 
 /usr/include/x86_64-linux-gnu/bits/types/__fpos_t.h:
 
@@ -529,6 +547,12 @@ CMakeFiles/testCode.dir/src/main.cpp.o: /home/kjwoo9467/training/ivis_training/k
 /usr/include/c++/13/debug/debug.h:
 
 /usr/include/c++/13/stdexcept:
+
+/usr/include/c++/13/bits/stl_algobase.h:
+
+/usr/include/c++/13/bits/node_handle.h:
+
+/usr/include/c++/13/ios:
 
 /usr/include/c++/13/bits/shared_ptr_base.h:
 
@@ -547,6 +571,8 @@ CMakeFiles/testCode.dir/src/main.cpp.o: /home/kjwoo9467/training/ivis_training/k
 /home/kjwoo9467/training/ivis_training/kjwoo/new_structure/ch13_2_Q1/src/main.cpp:
 
 /usr/include/c++/13/bits/invoke.h:
+
+/usr/include/c++/13/set:
 
 /usr/include/c++/13/bits/locale_classes.tcc:
 
@@ -567,8 +593,6 @@ CMakeFiles/testCode.dir/src/main.cpp.o: /home/kjwoo9467/training/ivis_training/k
 /usr/include/c++/13/bits/hash_bytes.h:
 
 /usr/include/asm-generic/errno-base.h:
-
-/usr/include/c++/13/bits/move.h:
 
 /usr/include/x86_64-linux-gnu/sys/single_threaded.h:
 
@@ -658,13 +682,13 @@ CMakeFiles/testCode.dir/src/main.cpp.o: /home/kjwoo9467/training/ivis_training/k
 
 /usr/include/c++/13/bits/basic_string.h:
 
-/usr/include/stdc-predef.h:
-
 /usr/include/x86_64-linux-gnu/c++/13/bits/os_defines.h:
 
 /usr/include/x86_64-linux-gnu/c++/13/bits/c++locale.h:
 
 /usr/include/c++/13/bits/ptr_traits.h:
+
+/usr/include/c++/13/bits/move.h:
 
 /usr/include/x86_64-linux-gnu/bits/types.h:
 
@@ -673,6 +697,16 @@ CMakeFiles/testCode.dir/src/main.cpp.o: /home/kjwoo9467/training/ivis_training/k
 /usr/include/c++/13/bits/cpp_type_traits.h:
 
 /usr/include/c++/13/bits/cxxabi_forced.h:
+
+/usr/include/c++/13/bits/shared_ptr_atomic.h:
+
+/usr/include/c++/13/bits/erase_if.h:
+
+/usr/include/x86_64-linux-gnu/bits/types/struct_timespec.h:
+
+/usr/include/c++/13/cstddef:
+
+/usr/include/c++/13/vector:
 
 /usr/include/x86_64-linux-gnu/bits/uintn-identity.h:
 
@@ -686,7 +720,7 @@ CMakeFiles/testCode.dir/src/main.cpp.o: /home/kjwoo9467/training/ivis_training/k
 
 /usr/include/c++/13/bits/alloc_traits.h:
 
-/usr/include/c++/13/ios:
+/usr/include/c++/13/bits/stl_construct.h:
 
 /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:
 
@@ -706,11 +740,15 @@ CMakeFiles/testCode.dir/src/main.cpp.o: /home/kjwoo9467/training/ivis_training/k
 
 /usr/include/c++/13/bits/stl_raw_storage_iter.h:
 
+/usr/include/c++/13/bits/stl_set.h:
+
 /usr/include/x86_64-linux-gnu/bits/types/struct___jmp_buf_tag.h:
 
 /usr/include/c++/13/bits/stl_tempbuf.h:
 
 /usr/include/c++/13/bits/stl_vector.h:
+
+/usr/include/c++/13/bits/stl_tree.h:
 
 /usr/include/c++/13/bits/stl_uninitialized.h:
 
@@ -731,6 +769,8 @@ CMakeFiles/testCode.dir/src/main.cpp.o: /home/kjwoo9467/training/ivis_training/k
 /usr/include/c++/13/bits/std_abs.h:
 
 /usr/include/c++/13/bits/postypes.h:
+
+/usr/include/c++/13/bits/stl_multiset.h:
 
 /usr/include/c++/13/bits/uses_allocator.h:
 
@@ -760,17 +800,9 @@ CMakeFiles/testCode.dir/src/main.cpp.o: /home/kjwoo9467/training/ivis_training/k
 
 /usr/include/c++/13/cerrno:
 
-/usr/include/stdio.h:
-
 /usr/include/c++/13/bits/allocated_ptr.h:
 
 /usr/include/c++/13/clocale:
-
-/usr/include/x86_64-linux-gnu/bits/types/struct_timespec.h:
-
-/usr/include/c++/13/cstddef:
-
-/usr/include/c++/13/vector:
 
 /usr/include/x86_64-linux-gnu/bits/types/struct_FILE.h:
 
@@ -845,11 +877,3 @@ CMakeFiles/testCode.dir/src/main.cpp.o: /home/kjwoo9467/training/ivis_training/k
 /usr/include/x86_64-linux-gnu/bits/pthread_stack_min-dynamic.h:
 
 /usr/include/linux/errno.h:
-
-/usr/include/pthread.h:
-
-/usr/include/sched.h:
-
-/usr/include/stdint.h:
-
-/usr/include/stdlib.h:

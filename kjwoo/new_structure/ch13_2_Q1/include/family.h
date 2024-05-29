@@ -5,6 +5,7 @@
 #include <set>
 #include <string>
 #include <vector>
+class FamilyTree;
 class Member : public std::enable_shared_from_this<Member> {
 private:
     std::vector<std::shared_ptr<Member>> children;
@@ -29,4 +30,5 @@ public:
     int CalculateChon(Member* mem1, Member* mem2);
     void AddMember(std::shared_ptr<Member> mem);
 };
+
 #endif

@@ -49,16 +49,77 @@ int FamilyTree::CalculateChon(Member* mem1, Member* mem2) {
     // 체크한 멤버는 제외해야한다.
     // mem 2를 찾으면 지금까지의 거리를 더해가며 리턴
     // mem 2를 못찾았다면 ? 거리를 더해가면 리턴하면 안된다.
+    checked_member.insert(mem1->shared_from_this());
+    int result = INT32_MAX;
+    bool foundFlag = false;  // 찾았는지 체크.
 
     // 배우자 탐색
     for (auto ws : mem1->spouse) {
         std::shared_ptr<Member> s = ws.lock();
         if (s) {
-            if (checked_member.find(s) != checked_member.end()) break;  // 이미 체크한 멤버이면
+            if (checked_member.find(s) != checked_member.end()) continue;  // 이미 체크한 멤버이면
             if (s.get() == mem2) {
                 // 발견
+                result = 0;
+                foundFlag = true;
+            } else {
+                checked_member.insert(s);
+                int res = CalculateChon(s.get(), mem2);
+                if (res < result && res >= 0) {  // 최단거리, 아무것도 못찾았을 때는 -1을 리턴 하므로 제외한다.
+                    result = res;
+                    foundFlag = true;
+                }
             }
         }
     }
+    // 부모 탐색
+
+    for (auto wp : mem1->parents) {
+        std::shared_ptr<Member> p = wp.lock();
+        if (p) {
+            if (checked_member.find(p) != checked_member.end()) continue;  // 이미 체크한 멤버이면
+            if (p.get() == mem2) {
+                // 발견
+                if (result > 1) {
+                    result = 1;
+                    foundFlag = true;
+                }
+            } else {
+                checked_member.insert(p);
+                int res = CalculateChon(p.get(), mem2);
+                if (res + 1 < result && res >= 0) {  // 최단거리, 아무것도 못찾았을 때는 -1을 리턴 하므로 제외한다.
+                    result = res + 1;
+                    foundFlag = true;
+                }
+            }
+        }
+    }
+    // 자식 탐색
+    for (auto c : mem1->children) {
+        // 자식 포인터는 weak가 아니므로 lock사용안해도 된다.
+        if (checked_member.find(c) != checked_member.end()) continue;
+        if (c.get() == mem2) {
+            if (result > 1) {
+                result = 1;
+                foundFlag = true;
+            }
+        } else {
+            checked_member.insert(c);
+            int res = CalculateChon(c.get(), mem2);  // 최단거리, 아무것도 못찾았을 때는 -1을 리턴 하므로 제외한다.
+            if (res + 1 < result && res >= 0) {
+                result = res + 1;
+                foundFlag = true;
+            }
+        }
+    }
+
+    if (foundFlag)  // 찾았을때
+    {
+        // std::cout << mem1 << ":  return:" << result << std::endl;
+        return result;
+    } else {
+        // std::cout << mem1 << ":  return:" << -1 << std::endl;
+        return -1;
+    }  // 못 찾았을 때
 }
 void FamilyTree::AddMember(std::shared_ptr<Member> mem) { entire_family.push_back(mem); }

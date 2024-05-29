@@ -6,37 +6,35 @@ int main() {
     std::shared_ptr<Member> c = std::make_shared<Member>();
     std::shared_ptr<Member> d = std::make_shared<Member>();
     std::shared_ptr<Member> e = std::make_shared<Member>();
+    std::shared_ptr<Member> f = std::make_shared<Member>();
     FamilyTree ft;
     ft.AddMember(a);
     ft.AddMember(b);
     ft.AddMember(c);
     ft.AddMember(d);
     ft.AddMember(e);
+    ft.AddMember(f);
 
     a->AddChild(b);
     a->AddChild(c);
     d->AddChild(e);
-    a->AddSpouse(d);
+    c->AddChild(f);
+    a->AddSpouse(d);  // 배우자를 추가하면 배우자쪽 자식이 내자식으로 들어오고, 내자식이 배우자 자식으로 들어간다.
+                      // 자식들도 부모가 추가된다.
+    /*
+    가계도
+                            (a     -    d)
+                         /       \         \
+                        b        c           e
+                                    \
+                                     f
+
+    */
+    std::cout << "d-f chon : " << ft.CalculateChon(d.get(), f.get()) << std::endl;
 }
 
 /*
 
-내 자식추가 a->b
-자식 부모추가b->a
-내 자식추가a->c
-자식 부모추가c->a
-내 자식추가d->e
-자식 부모추가e->d
-배우자 추가a->d
-배우자 자식추가
-내 자식추가
-자식 부모추가
-배우자 자식추가
-자식 부모추가
-자식 부모추가
-배우자 자식추가
-내 자식추가
-자식 부모추가
 
 
 */
