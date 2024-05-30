@@ -194,3 +194,53 @@ shared_future는 복사가 가능하고 모두 같은 객체를 공유한다.
 packaged_task
 
 promise - future패턴을 비동기적함수(callable)의 리턴값에 적용이 가능
+
+원래 스레드에 task와 함께 promise인자도 전달해야했지만 
+packaged_task로 promise와 비동기적함수를 묶어서 스레드에 전달할 수있다.
+
+packaged_task<int(int)> task1(sometask); //function객체와 유사
+
+std::future<int> start = task.get_future() // promise객체와 똑같이 futrue를 받아올 수 있다.
+
+thread<t(std::move(task1),5);
+//packaged_task는 복사생성이 불가능하므로 명시적으로 move해야함.
+
+
+std::async
+앞서 promise나 packaged_task는 비동기적으로 실행하기위해서는 쓰레드를 명시적으로 생성해서
+실행해야 했지만 std:async에 함수만 전달하면 알아서 쓰레드를 만들고 결과를 future에 전달합니다.
+
+int sum(const std::vector<int>& v, int start, int end){
+  int total = 0;
+  for (int i=start; i<end ; ++i)
+  {
+    total += v[i];
+  }
+  return total;
+}
+
+int parallel_sum(const std::vector<int>& v){
+
+  std::future<int> lower_half_future = 
+    std::async(std::launch:async, sum, cref(v), 0, v.size() / 2);
+  
+  int upper_half = sum(v,v.size()/ 2.v.size());
+
+  return lower_half_future.get() + upper_half;
+}
+
+int main(){
+  std::vector<int> v;
+  v.reserve(1000);
+  for(int i =0; i<1000;++i){
+    v.push_back(i+1);
+  }
+  parallel_sum(v);
+}
+
+async 함수는 인자로 받은 함수를 비동기적으로 실행하고 future를 리턴
+첫번째인자로 어떤형태로 실행할지 두가지값이 가능
+std::launch::aync - 바로쓰레드를 생성해서 비동기 실행 (디폴트 인자)
+std::launch::deferred -쓰레드를 생성하지않고 future가 get했을 때 함수실행 (동기 실행)
+
+당장 비동기실행할 필요가 없을때 두번째 옵션 사용.

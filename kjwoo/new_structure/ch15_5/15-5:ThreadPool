@@ -1,0 +1,75 @@
+처리해야 될 작업들을 큐에 추가하는 것.
+쓰레드풀이란 쓰레드 직업소개소같은 것
+쓰레드들이 대기하고 있다가 대기하고 있던 쓰레드들 중 하나가 이를 받아 실행
+처리할 작업들을 큐에 추가하는 것.
+
+오래된 작업 먼저 처리가 가능.
+
+쓰레드풀 클래스 설계
+쓰레드 수
+쓰레드를 보관할 컨테이너 (벡터)
+작업을 보관할 컨테이너(큐 <function</*return*/(/*para*/)>)
+큐를 race condition에서 보호할 mutex, cv //생산자 소비자 패턴 구현
+쓰레드들을 종료할 조건을 나타내는 bool stop_all
+쓰레드들이 실행할 worker_thread 함수
+작업을 추가할 EnqueueJob 함수
+소멸자 - 쓰레드 종료.
+
+임의의 함수를 job으로 받기
+그 함수의 리턴값을 보관하는 future를 리턴하는 꼴이 더 좋다.
+EnqueueJob을 템플릿으로 처리한다.
+
+template <class F, class... Args> //class... 가변길이 템플릿 임의의 길이의 인자들을받는다.
+std::future<typename std::result_of<F(Args...)>::type> EnqueueJob(F f, Args... args);
+함수 F f 와 인자들을 받아 스레드에 넣은 후 future객체를 받아온다
+함수 f의 리턴값은 result_of<F(Args...)>::type으로 알아온다.
+
+문제는 큐에 보관할 수 있는 function객체는 리턴 타입과 인자 타입이 정해져있다.
+인자 타입은 람다함수로 감싸서
+jobs_.push([f,args...](){f(args...);}) 로 하면 해결 되지만
+리턴은 받을 수가 없다.
+
+그러나 packaged_task를 사용하면 리턴값을 받을 수있다.
+using return_type = typename std::result_of<F(Args...)>::type; //f의 리턴타입을 보관하는 타입 정의
+std::packaged_task<return_type()> job(std::bind(f, args...)); //f의 실행 결과를 저장하는 job객체 함수의 리턴값과 예외까지 받을 수 있다.
+packaged_task는 함수만을 인자로 받기때문에 인자들을 f에 bind 시키면 된다.
+
+std::future<return_type> job_result_future = job.get_future();
+{
+  std::lock_guard<std::mutex> lock(m_job_q_);
+  jobs_.push([&job]() { job(); });
+}
+
+job의 결과들을 저장하는 job_result_future를 정의해 jobs_에 job을 실행하는 람다함수를 추가
+
+그러나 이렇게 했을때 job객체는 enqueuejob의 지역변수이기때문에,
+enqueuejob이 job을 캡쳐해 job을 실행하는 람다함수를 큐에 넣어놔도
+worker가 람다함수를 실행하려하면 enqueuejob이 끝나있으므로 캡쳐할 job이 지역변수로서 이미 소멸했기 때문에 실행이 불가하다.
+
+이를 해결할 방법은 
+1.packaged_task를 따로 컨테이너에 보관하거나
+2.shared_ptr에 packaged_task를 보관하는 방법이 있다.
+
+1번은 packaged_task를 쓰지않아도 남아있지만
+2번은 packaged_task 사용하지않을 경우 shared_ptr가 알아서 소멸시키므로 관리가 편하다.
+
+auto job = std::make_shared<std::packaged_task<return_type()>>(std::bind(f, args...));
+std::future<return_type> job_result_future = job->get_future();
+{
+  std::lock_guard<std::mutex> lock(m_job_q_);
+  jobs_.push([job]() { (*job)(); });// job의 복사본을 전달하기때문에 지역객체 job이 사라져도 괜찮다.
+}
+
+완벽한 전달.
+EnqueueJob이 인자들의 복사본을 받는다는 것이 문제이므로 완벽한 전달 패턴을 사용해야한다.
+
+template <class F, class... Args>
+std::future<typename std::result_of<F(Args...)>::type> EnqueueJob(F&& f, Args&&... args);
+인자들을 우측값으로 바꾼 후
+
+auto job = std::make_shared<std::packaged_task<return_type()>>(std::bind(std::forward<F>(f), std::forward<Args>(args)...));
+bind에 forward로 인자를 전달한다. //#include<utility>
+//rvalue를 rvalue로 전달. &&는 좌측값과 우측값을 둘다받으므로 좌측값인지 우측값인지 판단을 forward에서 해준다.
+
+
+
