@@ -1,0 +1,14 @@
+#include <iostream>
+
+#include "foo.h"
+
+int foo() {
+  std::cout << "Foo!" << std::endl;
+  return 0;
+}
+
+g++ -c main.cc // 다음 주어지는 파일을 컴파일해서 목적파일을 생성하라는 의미
+
+main 파일만 컴파일해도 문제없이 컴파일된다.
+main.o 에는 foo 라는 함수를 호출해라! 라는 내용만 있지, 
+foo 는 어디에 있고 이러이러한 방식으로 동작한다 에 관한 이야기는 없기 때문

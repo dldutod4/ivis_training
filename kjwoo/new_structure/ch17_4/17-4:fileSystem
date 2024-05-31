@@ -1,0 +1,139 @@
+파일 시스템 라이브러리의 경우, 
+파일에 관한 정보 (파일 메타데이타)에 대한 접근을 도와주는 역할을 수행하며, 
+파일 자체를 읽는 일은 수행하지 않습니다.
+a.txt 라는 파일을 찾고 싶다면 filesystem 라이브러리를 사용하게 되고, 
+해당 파일을 찾은 이후에 a.txt 를 읽고 싶다면 fstream 라이브러리를 사용
+
+#include <filesystem>#include <filesystem>
+#include <iostream>
+
+int main() {
+  std::filesystem::path p("./some_file");
+
+  std::cout << "Does " << p << " exist? [" << std::boolalpha
+            << std::filesystem::exists(p) << "]" << std::endl;
+  std::cout << "Is " << p << " file? [" << std::filesystem::is_regular_file(p)
+            << "]" << std::endl;
+  std::cout << "Is " << p << " directory? [" << std::filesystem::is_directory(p)
+            << "]" << std::endl;
+}
+std::filesystem::path p("./some_file");
+컴퓨터에서 해당 파일을 참조할 때 가장 맨 첫 번째 디렉토리
+흔히 우리가 폴더라고 부르는 것이 바로 디렉토리(directory) 입니다.
+부터 순차적으로 찾아
+
+절대 경로 (absolute path) 와 상대 경로 (relative path)
+절대 경로는 가장 최상위 디렉토리 (이를 보통 root 디렉토리라고 합니다) 에서 내가 원하는 파일까지의 경로
+상대 경로의 경우 반대로 현재 프로그램이 실행되고 있는 위치 에서 해당 파일을 찾아가는 경로 
+
+
+<filesystem> 함수들은 path 객체를 인자로 받음
+path 클래스는 그냥 경로를 나타낼 뿐 실제 파일을 지칭하는 것은 아님
+해당 경로에 파일이 실제로 존재하는지 아닌지 보려면 아래와 같이 exists 함수를 사용
+std::filesystem::exists(p)
+std::filesystem::is_regular_file(p) //리눅스에서는 장치나 소켓도 파일로 취급하기 때문
+std::filesystem::is_directory(p)
+
+ 여러 경로 관련 함수들
+ fs::current_path() 
+ p.relative_path()
+ fs::absolute(p)
+ fs::canonical(p)
+ canonical 의 경우 해당 파일의 경로를 가장 짧게 나타낼 수 있는 공식적인 절대 경로
+
+ 디렉토리 관련 작업들
+     해당 디렉토리 안에 있는 파일/폴더들 살펴보기
+
+    해당 디렉토리 안에 폴더 생성하기 (파일 생성은 ofstream 으로 할 수 있죠!)
+
+    해당 디렉토리 안에 파일/폴더 복사하기
+
+    해당 디렉토리 안에 파일/폴더 삭제하기
+#include <filesystem>
+#include <iostream>
+
+namespace fs = std::filesystem;
+
+int main() {
+  fs::directory_iterator itr(fs::current_path() / "a");
+  while (itr != fs::end(itr)) {
+    const fs::directory_entry& entry = *itr;
+    std::cout << entry.path() << std::endl;
+    itr++;
+  }
+}
+
+filesystem 라이브러리에서는 directory_iterator 라는 반복자를 제공
+path 에는 operator/ 가 정의
+fs::current_path() / "a"
+현재 경로에 /a 를 편리하게 추가
+filesystem 에 정의되어 있는 end 함수에 현재 반복자를 전달하면 해당 반복자의 끝을 얻을 수 있다.
+각각의 반복자들은 디렉토리에 정의되어 있는 개개의 파일을 나타내는 directory_entry 를 가리키고 있다.
+ directory_entry 에는 여러가지 정보들이 저장되어 있는데 파일의 이름이나, 크기 등등
+
+ directory_iterator 의 한 가지 단점은 해당 디렉토리 안에 다른 디렉토리가 있을 경우 
+ 그 안까지는 살펴보지 않는다는 점
+
+ 디렉토리 안에 서브 디렉토리까지 모두 순회할 수 있는 반복자를 사용하고 싶다면 
+ recursive_directory_iterator 를 사용
+
+ 디렉토리 생성하기
+ 디렉토리를 생성하고 싶다면 filesystem 에서 제공하는 create_directory 함수를 사용
+ #include <filesystem>
+#include <iostream>
+
+namespace fs = std::filesystem;
+
+int main() {
+  fs::path p("./a/c");
+  std::cout << "Does " << p << " exist? [" << std::boolalpha << fs::exists(p)
+            << "]" << std::endl;
+
+  fs::create_directory(p);
+
+  std::cout << "Does " << p << " exist? [" << fs::exists(p) << "]" << std::endl;
+  std::cout << "Is " << p << " directory? [" << fs::is_directory(p) << "]"
+            << std::endl;
+}
+create_directory 함수는 주어진 경로를 인자로 받아서 디렉토리를 생성
+생성하는 디렉토리의 부모 디렉토리는 반드시 존재 
+create_directories 함수 부모 디렉토리들까지 한꺼번에 만든다.
+
+파일과 폴더 복사/삭제
+filesystem 의 copy
+#include <filesystem>
+#include <iostream>
+
+namespace fs = std::filesystem;
+
+int main() {
+  fs::path from("./a");
+  fs::path to("./c");
+
+  fs::copy(from, to, fs::copy_options::recursive);
+}
+
+    skip_existing : 이미 존재하는 파일은 무시 (예외 안던지고)
+
+    overwrite_existing : 이미 존재하는 파일은 덮어 씌운다.
+
+    update_existing : 이미 존재하는 파일이 더 오래되었을 경우 덮어 씌운다.
+
+파일 / 디렉토리 삭제
+
+int main() {
+  fs::path p("./a/b.txt");
+  std::cout << "Does " << p << " exist? [" << std::boolalpha
+            << std::filesystem::exists(p) << "]" << std::endl;
+  fs::remove(p);
+  std::cout << "Does " << p << " exist? [" << std::boolalpha
+            << std::filesystem::exists(p) << "]" << std::endl;
+}
+
+remove 함수를 통해서 디렉토리 역시 지울 수 있습니다. 단, 해당 디렉토리는 반드시 빈 디렉토리여야 합니다. 
+만일 비어있지 않은 디렉토르를 삭제하고 싶다면 remove_all 함수를 사용
+
+directory_iterator 사용시 주의할 점
+directory_iterator 는 디렉토리의 구조가 바뀔 때 마다 무효화 
+fs::remove 후에 entry 는 사용할 수 없는 반복자
+삭제시마다 iterator를 초기화해줘야한다.
