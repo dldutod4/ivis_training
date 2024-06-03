@@ -1,0 +1,247 @@
+템플릿 메타 함수
+메타 함수는 타입 에 대해 연산을 수행한다
+
+#include <iostream>
+#include <type_traits>
+
+template <typename T>
+void tell_type() {
+  if (std::is_void<T>::value) {
+    std::cout << "T 는 void ! \n";
+  } else {
+    std::cout << "T 는 void 가 아니다. \n";
+  }
+}
+
+int main() {
+  tell_type<int>();  // void 아님!
+
+  tell_type<void>();  // void!
+}
+
+if 문은 템플릿 특수화를 통해서 구현된다
+
+#include <iostream>
+
+template <typename T>
+struct is_void {
+  static constexpr bool value = false;
+};
+
+template <>
+struct is_void<void> {
+  static constexpr bool value = true;
+};
+
+template <typename T>
+void tell_type() {
+  if (is_void<T>::value) {
+    std::cout << "T 는 void ! \n";
+  } else {
+    std::cout << "T 는 void 가 아니다. \n";
+  }
+}
+
+int main() {
+  tell_type<int>();  // void 아님!
+
+  tell_type<void>();  // void!
+}
+
+#include <iostream>
+#include <type_traits>
+
+class A {};
+
+// 정수 타입만 받는 함수
+template <typename T>
+void only_integer(const T& t) {
+  static_assert(std::is_integral<T>::value);
+  std::cout << "T is an integer \n";
+}
+
+int main() {
+  int n = 3;
+  only_integer(n);
+
+  A a;
+  only_integer(a);
+}
+위는 컴파일 에러가 난다.
+
+static_assert는 함수가 아닌 키워드로 인자로 전달된 식이 참인지 아닌지를 컴파일 타임에 확인합니다.
+즉 bool타입의 constexpr 만 static_assert로 확인할 수 있고 그 외의 경우에는 컴파일 오류가 발생합니다.
+
+is_class
+인자로 전달된 타입이 클래스 인지 아닌지 확인하는 메타 함수
+
+namespace detail {
+template <class T>
+char test(int T::*);
+struct two {
+  char c[2];
+};
+template <class T>
+two test(...);
+}  // namespace detail
+
+template <class T>
+struct is_class
+    : std::integral_constant<bool, sizeof(detail::test<T>(0)) == 1 && !std::is_union<T>::value> {};
+
+std::integral_constant<bool, false> 는 그냥 integral_constant<bool, false>::value 가 false 인 클래스
+즉 sizeof... 식이 true면 is_class는 true, false면 false가 되는 것이다.
+
+sizeof(detail::test<T>(0)) == 1 는 왜 T가 클래스일때만 1이 되나
+
+ 데이터 멤버를 가리키는 포인터 (Pointer to Data member)
+
+ #include <iostream>
+#include <type_traits>
+
+class A {
+ public:
+  int n;
+
+  A(int n) : n(n) {}
+};
+
+int main() {
+  int A::*p_n = &A::n;
+
+  A a(3);
+  std::cout << "a.n : " << a.n << std::endl;
+  std::cout << "a.*p_n : " << a.*p_n << std::endl;
+}
+
+int A::*p 는 A의 int멤버를 가리킬 수 있는 포인터라는 의미
+이건 어떤 실제로 생성된 객체의 int멤버를 가리킨다는 것이 아니라 클래스A의 int멤버 자체를 가리킨다는 의미
+
+a.n과 a.*p_n은 같은 문장이다.
+그리고 이 문법은 클래스에만 사용할 수 있다.
+
+1.
+template <class T>
+char test(int T::*);
+이 문법은 T가 클래스이기만하면 int 데이터 멤버가 없어도 유효하다.
+
+2.
+struct two {
+  char c[2];
+};
+template <class T>
+two test(...);
+이 문장은 T가 무엇이든 인스턴스화 가능.
+
+detail::test<T>(0) 컴파일될때
+위의 둘중 하나가 오버로드되는데
+1번이 인자가 명시되어있어서 우선순위가 더 높다
+
+반면 T가 클래스가 아니면 1번은 문법적으로 유효하지않아서 오버로딩 후보군에서 제외된다.
+(컴파일 오류가 발생하지않음.)
+
+
+SFINAE
+치환 오류는 컴파일 오류가 아니다 (Substitution Failure Is Not An Error) 흔히 줄여서 SFINAE
+ 템플릿 인자 치환 후에 만들어진 식이 문법적으로 맞지 않는다면, 
+ 컴파일 오류를 발생 시키는 대신 단순히 함수의 오버로딩 후보군에서 제외
+
+enable_if
+ SFINAE 를 통해서 조건에 맞지 않는 함수들을 
+ 오버로딩 후보군에서 쉽게 뺄 수 있게 도와주는 간단한 템플릿 메타 함수
+
+ template<bool B, class T = void>
+struct enable_if {};
+ 
+template<class T>
+struct enable_if<true, T> { typedef T type; };
+
+B 가 참으로 연산된다면 enable_if::type 의 타입이 T 가 되고,
+B 가 거짓이라면 enable_if 에 type 가 존재하지 않게 됩니다.
+
+template <typename T, typename = typename std::enable_if<std::is_integral<T>::value>::type>
+typename = 
+원래 typename U =  이런 식으로 디폴트인자를 받는 식이지만 뒷문장을 쓰기위한 용도라 굳이 인자를 정의안해도 됨
+typename std::enable_if<std::is_integral<T>::value>::type
+typename이 붙는 이유는 enable_if<~~~>::type이 의존타입이기 때문
+(인자에따라 달라져서 컴파일러에게 타입이라는 것을 명시해줘야하는 타입)
+
+#include <iostream>
+
+template <typename T>
+class vector {
+ public:
+  vector(size_t num, const T& element) {
+    std::cout << element << " 를 " << num << " 개 만들기" << std::endl;
+  }
+
+  template <typename Iterator>
+  vector(Iterator start, Iterator end) {
+    std::cout << "반복자를 이용한 생성자 호출" << std::endl;
+  }
+};
+
+int main() { vector<int> v(10, 3); }
+
+위의 경우 Iterator 생성자 쪽에 오버로딩 된다.
+그 이유는 size_t는 부호없는 data인 반면 10은 부호가 있는 data이고, 
+Iterator는 int로 오버로딩이 가능하다는 것이다.그래서 Iterator쪽을 더 나은 후보로서 인식한다.
+따라서 Iterator가 실제 Iterator여야한다는 것을 강제해야한다.
+
+template <typename Iterator,
+          typename = std::enable_if_t<is_iterator<Iterator>::value>>
+vector(Iterator start, Iterator end) {
+  std::cout << "반복자를 이용한 생성자 호출" << std::endl;
+}
+
+//Iterator임을 강제할 수 있다. Iterator가 아니면 오버로딩 후보에서 제외된다.
+
+특정 멤버 함수가 존재하는 타입 만을 받는 함수
+#include <iostream>
+#include <type_traits>
+
+template <typename T, typename = decltype(std::declval<T>().func())>
+void test(const T& t) {
+  std::cout << "t.func() : " << t.func() << std::endl;
+}
+
+struct A {
+  int func() const { return 1; }
+};
+
+int main() { test(A{}); }
+
+typename = decltype(std::declval<T>().func())
+에서 declval<T>().func()가 문법오류가 아니려면
+T가 func멤버함수를 가지고 있어야만한다. 만약 없다면 올바르지 않은 문장이므로 오버로딩후보에서 제외된다.
+template <typename T, typename = std::enable_if_t<
+                        std::is_integral_v<decltype(std::declval<T>().func())>>>
+enable_if_t로 리턴타입까지 int로 강제 했다.
+
+template <typename Cont, typename = decltype(std::declval<Cont>().begin()),
+          typename = decltype(std::declval<Cont>().end())>
+//Cont가 begin()과 end() 멤버가 있어야함을 강제한다.
+
+2개 이상부터는 가독성이 떨어지기 때문에 void_t 도입.
+
+void_t
+
+template <class...>
+using void_t = void;
+가변길이 템플릿을 이용해 템플릿인자로 여러개의 타입들을 전달받고 void_t는 결국 void와 동일
+void_t<A,B,C,D>는 결국 void이다.
+void_t<A,B,C,D>에서 A,B,C,D중 잘못된 식이 있다면 결국 오버로딩 목록에서 제외
+
+template <typename Cont,
+          typename = std::void_t<decltype(std::declval<Cont>().begin()),
+                                 decltype(std::declval<Cont>().end())>>
+더 깔끔해졌다.
+
+template <typename Cont>
+std::void_t<decltype(std::declval<Cont>().begin()),
+            decltype(std::declval<Cont>().end())>
+print(const Cont& container)
+
+디폴트인자부분이 아닌 함수의 리턴타입으로 타입을 체크하는 버전
+사용자가 실수로 정말 두번째 템플릿 인자로 void를 넣을 경우를 방지하기 위해서 이다.
+

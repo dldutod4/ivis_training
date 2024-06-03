@@ -1,0 +1,228 @@
+알고리즘 라이브러리 컨테이너의 반복자들을 가지고 작업을 쉽게 수행하도록 도와주는 라이브러리
+
+    template <typename Iter>
+    void do_something(Iter begin, Iter end);
+
+template <typename Iter, typename Pred>
+void do_something(Iter begin, Iter end, Pred pred)
+
+    다음과같은 형태를 갖는다.시작점,
+    끝점을 받고,
+    bool을 반환하는 함수객체를 전달. -> 람다함수로 쉽게만들 수 있다
+                                         .
+
+    정렬
+
+    sort : 일반적 정렬 stable_sort : 원소간 순서를 보존하는 정렬 같은 우선순위인 원소들의 순서가 유지된다.partial_sort
+    : 배열의 일부만 정렬
+
+      sort에 들어가는 반복자의 경우 반드시 임의접근 반복자(RandomAccessIterator)
+타입을 만족해야한다 기본적으로 오름차순으로 정렬을 해준다
+    .이것을 바꾸려면
+
+    operator<를 반대로 바꿔주면 되지만 기본타입의 경우 불가능 하므로 3번째 인자를 사용한다.
+
+    struct int_compare {
+    bool operator()(const int& a, const int& b) const { return a > b; }
+};
+위와같은 함수객체를 만들어 넣으면 되는데 이미 템플릿이 있다 template <typename T>
+struct greater_comp {
+    bool operator()(const T& a, const T& b) const { return a > b; }
+};
+그래서 그냥 std::sort(v.begin(), v.end(), greater<int>())
+
+partial_sort
+  std::partial_sort(vec.begin(), vec.begin() + 3, vec.end());
+  [start,end)원소들중에서 [start, middle)까지에 가장 작은 원소들만 순서대로 저장하고 나머지는 상관x
+    v : [1,8,9,4,2,3] 이 있을때
+    std::partial_sort(v.begin(),v.begin()+3,v.end())이면
+    [1,2,3 ...]이 된다.
+    복잡도는 O(NlogM) (M : 부분크기)
+
+stable_sort 
+원소 순서를 보존하는 정렬.
+
+
+원소 제거 (remove, remove_if)
+vec.erase(vec.begin()+3);
+원소를 제거하는 함수.
+
+특정값의 원소만 지울때
+원소제거 후에 iterator가 무효화되어 제대로 작동을 안했다.
+
+vec.erase(std::remove(vec.begin(), vec.end(),3),vec.end())
+
+erase함수에는 2가지 형태
+erase(iterator pos);
+erase(Iterator first,Iterator last);
+같은 형태가 있다.
+
+후자의 경우 first와 last사이 모든 원소를 지움
+만약 특정값의 원소를 벡터에서 연속적으로 존재하게 하면?
+
+특정원소를 찾으면 그다음원소부터 하나씩 앞으로 땡긴다.
+ex) 특정원소 = 3 
+5 3 1 2 3 4 -> 1땡기기
+5 1 2 2 3 4 -> 2땡기기
+5 1 2 4 3 4 -> 3발견 -> 4를 가져옴 
+종료 3의 위치를 리턴한다.
+즉 반복이 끝나는 위치부터 맨뒤까지 제거하면 3이 제거된 벡터만 남는다.
+remove는 원소의 이동만 수행하고 실제로 삭제하진 않는다. remove후에 erase함수를 호출하여 실제로 원소를 지워야한다.
+
+즉 vec.erase(remove(vec.begin(),vec.end(),3),vec.end());
+는 먼저 3인 원소들을 뒤로 보내버리고 그 원소들을 벡터에서 삭제해버리게된다.
+remove는 forwardIterator이기 때문이 vector, list, set, map 모두 사용이 가능하다.
+
+remove_if
+딱 특정값이 정해진게아닌 특정 조건의 원소를 지울때
+
+vec.erase(remove_if(vec.begin(),vec.end(),is_odd()), vec.end());
+remove_if함수는 3번째 인자로 조건 을 설명할 함수객체를 전달받는다.
+
+struct is_odd{
+    bool operator()(const int& i){
+        return (i % 2 == 1);
+    }
+}
+
+remove_if에 조건 추가하기
+예를들어 원소를 삭제하되 처음 2개만 삭제한다면?
+함수객체는 사실 클래스의 객체이기때문에 멤버변수가 있다.
+
+struct is_odd {
+  int num_delete;
+
+  is_odd() : num_delete(0) {}
+
+  bool operator()(const int& i) {
+    if (num_delete >= 2) return false;
+
+    if (i % 2 == 1) {
+      num_delete++;
+      return true;
+    }
+
+    return false;
+  }
+};
+
+ -> 2개가 삭제될 것 같지만 3개가 삭제된다.
+
+ 사실 c++표준에 따르면 remove_if에 전달되는 함수 객체의 경우 이전 호출에 의해 내부상태가 달라지면 안된다.
+ 즉 num_delete같은 인스턴스 변수가 있어서는 안된다.
+ remove_if구현과정에서 전달받은 함수객체를 복사해서 사용하는 경우 적용되지않기 때문이다.
+ c++표준에서 실제로 remove_if를 어떻게 구현할지는 정해놓지 않았다.
+
+ num_delete를 외부로 빼서 사용할 수 있다.
+
+struct is_odd {
+  int* num_delete;
+
+  is_odd(int* num_delete) : num_delete(num_delete) {}
+
+  bool operator()(const int& i) {
+    if (*num_delete >= 2) return false;
+
+    if (i % 2 == 1) {
+      (*num_delete)++;
+      return true;
+    }
+
+    return false;
+  }
+};
+vec.erase(std::remove_if(vec.begin(), vec.end(), is_odd(&num_delete)),vec.end());
+
+그런데 이런식으로 계속 함수를 만들어 크기가 커지면 프로젝트가 점점 커지고 가독성이 떨어짐
+
+->
+람다함수
+c++11 에서 도입되었으며 쉽게 이름이없는, 익명 함수객체를 만들수 있게 되었다.
+
+람다함수 정의방법
+[](int i) -> bool { return i % 2 == 1;}
+[capture list] (받는 인자) -> 리턴 타입 { 함수 본체}
+int i를 받고 bool을 리턴하는 람다함수.
+
+리턴 타입을 생략하는 경우 더 간단히 쓸수 있다.
+[capture list] (받는인자) -> { 함수 본체}
+알아서 리턴타입을 정해줌.
+
+바로 사용하는 것도 가능하다.
+[](int i) -> { return i+5;}(10);
+-> 15 반환
+
+람다 함수도 함수이기때문에 자신만의 스코프를 갖는다.
+일반적인 경우 함수 외부에 정의된 변수들을 사용할 수 없다.
+
+vec.erase(remove_if(vec.begin(),vec.end(),
+[&num_erased](int i) -> {       //num_erased의 레퍼런스를 캡쳐
+    if (num_erased >= 2)
+        return false;
+    else if (i % 2 == 1){
+        num_erased++;
+    }
+    return false;
+    }),
+vec.end());
+
+캡쳐리스트를 사용하면 외부 변수에 접근할 수 있다!
+
+객체의 멤버 함수안에서 람다함수를 사용할때 멤버변수들에 어떻게 접근할까
+this를 캡쳐하면 된다. (참고로 this는 레퍼런스로 전달할 수 없다.)
+this는 이미 개체를 가리키는 포인터로서 레퍼런스를 만드는 것이 의미가 없다.
+
+캡쳐리스트 사용법
+[] 아무것도
+[&a, b] a는 레퍼런스 b는 복사본
+[&] 외부변수 전체를 레퍼런스로
+[=] 외부변수 전체를 복사본으로
+
+원소 수정하기 (transform)
+예를 들어,컨테이너 전체 혹은 일부를 순회하며 값을 수정
+
+transform(시작반복자,끝반복자,저장할컨테이너의 시작반복자,Pred );
+
+ex
+transform(vec.begin(), vec.end(), vec.begin(), [](int i) { return i + 1; });
+함수객체가 각 요소들을 받아서 실행한 후 저장한다.
+
+단 저장하는 컨테이너는 원래의 컨테이너보다 최소한 크기가 같거나 커야한다.
+std::vector<int> vec2(6,0); //6개의 공간, 0으로 전부 초기화 벡터.
+transform(vec.begin(),vec.end(),vec2.begin(),[](int i)->{ return i+1;});
+
+
+원소를 탐색하는 함수.
+find, find_if, any_of, all_of 등등.
+
+find
+
+template <class InputIt, class T>
+InputIt find(InputIt first, InputIt last, const T& value)
+
+first부터 last까지 순회하다가 value와 같은 값을 가리키는 반복자를 리턴한다.가장 가까운것 먼저 리턴한다.
+reverse_iterator를 쓰면 끝부터 탐색한다.
+find(vec.rbegin(),vec.rend());
+
+모든 3을 찾고 싶다면?
+auto current = vec.begin();
+while(true){
+  current = std::find(current,vec.end,3); //3의 위치 반환
+  if (current == vec.end()) break;
+    std::cout << "3 은 " << std::distance(vec.begin(), current) + 1
+              << " 번째 원소" << std::endl;
+  current++; //끝이 아니면 다음위치부터 다시 탐색.
+
+}
+
+컨테이너 자체의find함수를 쓰는 것이 훨씬 빠르므로 제공하지 않는 경우에만 사용하는 것이 좋다.
+find_if(vec.begin(),vec.end(),[](int x) ->{ return x % 3 == 2;}) //가장먼저 조건에 맞는것 반복자반환
+any_of(vec.begin(),vec.end(),[](int x)->{return x > 3;}) //하나라도 조건충족시 true;
+all_of(vec.begin(),vec.end(),[](int x)->{return x > 3;}) //모두 조건 충족시 true;
+
+
+
+
+
+
+

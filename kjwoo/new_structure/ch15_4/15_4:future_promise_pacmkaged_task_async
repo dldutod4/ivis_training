@@ -1,0 +1,246 @@
+동기와 비동기적 실행에 대한 이해
+std::promise
+std::future
+std::packaged_task
+std::async
+
+동기와 비동기 실행
+동기적 실행이란
+한번에 하나씩 순차적으로 실행되는 작업
+
+string txt = read("a.txt");                  // 5ms
+string result = do_something_with_txt(txt);  // 5ms
+
+do_other_computation();  // 5ms 걸림 (CPU 로 연산을 수행함)
+read함수는 매우 오래걸리는데 이 시간동안 아무것도 안하는건 낭비가 심함.
+
+비동기적 실행이란 한갈래가 아닌 여러갈래로 갈라져 동시에 진행되는 것.
+thread로 해결가능하지만 명시적으로 생성해서 적절히 수행해야함.
+자바스크립트같은 언어들은 언어차원에서 비동기적 실행을 지원함.
+
+std::promise 와 std::future
+c++11 부터 c++도 가능해짐.
+미래에 스레드 T가 원하는 데이터를 돌려주겠다는 약속
+
+
+#include <future>
+#include <iostream>
+#include <string>
+#include <thread>
+using std::string;
+
+void worker(std::promise<string>* p) {
+  // 약속을 이행하는 모습. 해당 결과는 future 에 들어간다.
+  p->set_value("some data");
+}
+int main() {
+  std::promise<string> p;
+
+  // 미래에 string 데이터를 돌려 주겠다는 약속.
+  std::future<string> data = p.get_future();
+
+  std::thread t(worker, &p);
+
+  // 미래에 약속된 데이터를 받을 때 까지 기다린다.
+  data.wait();
+
+  // wait 이 리턴했다는 뜻이 future 에 데이터가 준비되었다는 의미.
+  // 참고로 wait 없이 그냥 get 해도 wait 한 것과 같다.
+  std::cout << "받은 데이터 : " << data.get() << std::endl;
+
+  t.join();
+}
+
+promise 객체
+연산 수행후 돌려줄 객체의 타입을 템플릿인자로 받음
+
+std::promise<string> p 
+// 미래에 string을 받겠다
+
+std::future<string> data = p.get_future(); 
+//future객체는 get_futer()로 생성
+//아직 결과가 data에 입력된것이 아님.
+
+p->set_value("some data"); 
+//promise객체가 자신의 future객체에 데이터 제공
+
+data.wait();
+//promise객체가 데이터를 줄때까지 대기
+
+data.get(); //사실 wait을 안해도 get()하면 wait()한 것과 같다. get()하면 줄때까지 기다림.
+//get은 두번하면 안된다. get을 호출하면 객체가 이동함.
+
+#include <exception>
+#include <future>
+#include <iostream>
+#include <string>
+#include <thread>
+using std::string;
+
+void worker(std::promise<string>* p) {
+  try {
+    throw std::runtime_error("Some Error!");
+  } catch (...) {
+    // set_exception 에는 exception_ptr 를 전달해야 한다.
+    p->set_exception(std::current_exception());
+  }
+}
+int main() {
+  std::promise<string> p;
+
+  // 미래에 string 데이터를 돌려 주겠다는 약속.
+  std::future<string> data = p.get_future();
+
+  std::thread t(worker, &p);
+
+  // 미래에 약속된 데이터를 받을 때 까지 기다린다.
+  data.wait();
+
+  try {
+    data.get();
+  } catch (const std::exception& e) {
+    std::cout << "예외 : " << e.what() << std::endl;
+  }
+  t.join();
+}
+
+worker에서 throw
+catch에서 p->set_exception() 
+//future 객체 data에 예외포인터 저장
+//(예외포인터는 current_exception()함수로 받을 수 잇다.)
+
+data.get()에서 예외 throw
+catch에서 에러 출력.
+
+wait_for 정해진 시간동안만 기다리고 그냥 진행.
+
+void worker(std::promise<void>* p) {
+  std::this_thread::sleep_for(std::chrono::seconds(10));
+  p->set_value();
+}
+int main() {
+  // void 의 경우 어떠한 객체도 전달하지 않지만, future 가 set 이 되었냐
+  // 안되었느냐의 유무로 마치 플래그의 역할을 수행할 수 있습니다.
+  std::promise<void> p;
+
+  // 미래에 string 데이터를 돌려 주겠다는 약속.
+  std::future<void> data = p.get_future();
+
+  std::thread t(worker, &p);
+
+  // 미래에 약속된 데이터를 받을 때 까지 기다린다.
+  while (true) {
+    std::future_status status = data.wait_for(std::chrono::seconds(1)); 
+
+    // 아직 준비가 안됨
+    if (status == std::future_status::timeout) {
+      std::cerr << ">";
+    }
+    // promise 가 future 를 설정함.
+    else if (status == std::future_status::ready) {
+      break;
+    }
+  }
+  t.join();
+}
+
+1초동안 준비가 안되면 그냥 통과하고 future_status를 반환.
+std:future_status status = data.wait_for(std::chrono::seconds(1));
+
+future_status이 time_out 이면 
+if (status == std::future_status::timeout)
+
+future_status는 3가지 상태를 가질 수 있음
+ready : future에 값이 설정됨
+timeout : 설정한 시간이 지남
+deferred: 후에 설명
+
+shared_future
+원래 future는 한번만 get가능.
+그러나 여러 스레드에서 future를 get해야할 때
+shared_future를 사용
+
+void runner(std::shared_future<void> start) {
+  start.get();
+  std::cout << "출발!" << std::endl;
+}
+
+int main() {
+  std::promise<void> p;
+  std::shared_future<void> start = p.get_future();
+
+  thread t1(runner, start);
+  thread t2(runner, start);
+  thread t3(runner, start);
+  thread t4(runner, start);
+
+  // 참고로 cerr 는 std::cout 과는 다르게 버퍼를 사용하지 않기 때문에 터미널에
+  // 바로 출력된다.
+  std::cerr << "준비...";
+  std::this_thread::sleep_for(std::chrono::seconds(1));
+  std::cerr << "땅!" << std::endl;
+
+  p.set_value();
+
+  t1.join();
+  t2.join();
+  t3.join();
+  t4.join();
+}
+
+shared_future는 복사가 가능하고 모두 같은 객체를 공유한다.
+
+
+packaged_task
+
+promise - future패턴을 비동기적함수(callable)의 리턴값에 적용이 가능
+
+원래 스레드에 task와 함께 promise인자도 전달해야했지만 
+packaged_task로 promise와 비동기적함수를 묶어서 스레드에 전달할 수있다.
+
+packaged_task<int(int)> task1(sometask); //function객체와 유사
+
+std::future<int> start = task.get_future() // promise객체와 똑같이 futrue를 받아올 수 있다.
+
+thread<t(std::move(task1),5);
+//packaged_task는 복사생성이 불가능하므로 명시적으로 move해야함.
+
+
+std::async
+앞서 promise나 packaged_task는 비동기적으로 실행하기위해서는 쓰레드를 명시적으로 생성해서
+실행해야 했지만 std:async에 함수만 전달하면 알아서 쓰레드를 만들고 결과를 future에 전달합니다.
+
+int sum(const std::vector<int>& v, int start, int end){
+  int total = 0;
+  for (int i=start; i<end ; ++i)
+  {
+    total += v[i];
+  }
+  return total;
+}
+
+int parallel_sum(const std::vector<int>& v){
+
+  std::future<int> lower_half_future = 
+    std::async(std::launch:async, sum, cref(v), 0, v.size() / 2);
+  
+  int upper_half = sum(v,v.size()/ 2.v.size());
+
+  return lower_half_future.get() + upper_half;
+}
+
+int main(){
+  std::vector<int> v;
+  v.reserve(1000);
+  for(int i =0; i<1000;++i){
+    v.push_back(i+1);
+  }
+  parallel_sum(v);
+}
+
+async 함수는 인자로 받은 함수를 비동기적으로 실행하고 future를 리턴
+첫번째인자로 어떤형태로 실행할지 두가지값이 가능
+std::launch::aync - 바로쓰레드를 생성해서 비동기 실행 (디폴트 인자)
+std::launch::deferred -쓰레드를 생성하지않고 future가 get했을 때 함수실행 (동기 실행)
+
+당장 비동기실행할 필요가 없을때 두번째 옵션 사용.

@@ -1,0 +1,254 @@
+#include <iostream>
+
+#include "foo.h"
+
+int foo() {
+  std::cout << "Foo!" << std::endl;
+  return 0;
+}
+
+g++ -c main.cc // 다음 주어지는 파일을 컴파일해서 목적파일을 생성하라는 의미
+
+main 파일만 컴파일해도 문제없이 컴파일된다.
+main.o 에는 foo 라는 함수를 호출해라! 라는 내용만 있지, 
+foo 는 어디에 있고 이러이러한 방식으로 동작한다 에 관한 이야기는 없기 때문
+
+링크
+컴파일러에 목적파일을 전달해 수행
+
+g++ main.o foo.o bar.o -o main
+
+make를 쓰는 이유
+수정할때마다 모든 파일을 컴파일하면 시간이 오래걸림
+수정한 파일만 다시 컴파일해서 링크하는게 효율적
+
+Makefile은 어떠한 조건으로 명령어를 실행할지 담은 파일
+make를 실행하면 해당위치의 Makefile을 찾아 읽어들이게 된다.
+
+target 
+어떤것을 make할지 전달하는데 make abc를 하면 타겟 중 abc를 찾아 대응되는 명령을 실행함.
+
+recipes
+주어진 타겟을 make할 때 실행할 명령어들의 나열
+recipe자리에 명령어를 쓸 때 반드시 탭 한 번으로 들여쓰기를 해야함.
+
+prerequisites
+주어진 타겟을 make 할 때 사용될 파일들의 목록
+다른 말로 의존 파일(dependency)
+
+만약 주어진 파일들의 수정 시간보다 
+타겟이 더 나중에 수정되었다면 타겟의 명령어를 실행하지 않는다.
+
+target ... : prerequisites ...
+(tab)recipe
+...
+
+MakeFile 구성
+foo.o : foo.h foo.cc
+  g++ -c foo.cc
+
+bar.o : bar.h bar.cc
+  g++ -c bar.cc
+
+main.o : main.cc foo.h bar.h
+  g++ -c main.cc
+
+main : foo.o bar.o main.o
+  g++ foo.o bar.o main.o -o main
+
+변수
+makefile내에 변수를 정의할 수 있음
+CC = g++
+
+$(CC)로 사용
+
+=과 :=의 차이
+= 은 변수정의에 다른변수가 포함됐을때 
+해당 변수가 정의될때까지 변수의 값이 정해지지않다가 정의되면 참조하여 정의가됨
+:= 해당시점에 정의되어 있지않으면 빈 문자열이됨.
+
+CC = g++
+CXXFLAGS = -Wall -O2 
+OBJS = foo.o bar.o main.o
+
+foo.o : foo.h foo.cc
+	$(CC) $(CXXFLAGS) -c foo.cc
+
+bar.o : bar.h bar.cc
+	$(CC) $(CXXFLAGS) -c bar.cc
+
+main.o : main.cc foo.h bar.h
+	$(CC) $(CXXFLAGS) -c main.cc
+
+main : $(OBJS)
+	$(CC) $(CXXFLAGS) $(OBJS) -o main
+
+CXXFLAGS = -Wall -02  // 모든 컴파일경고, 최적화레벨 2
+'
+
+PHONY
+clean :
+  rm -f $(OBJS) main
+생성된 모든 목적파일과 main을 제거
+
+그런데 실제로 clean이라는 파일이 있으면 make clean 명령을 무시함.
+
+.PHONY
+clean:
+  rm -f $(OBJS) main
+을 하면 clean파일의 유무와 상관없이 해당 타겟의 명령을 실행함.
+
+패턴사용
+
+%.o: %.cc %.h
+	$(CC) $(CXXFLAGS) -c $<
+
+%.o는 .o로끝나는 파일이름들을 지정
+*.o와 비슷한것 %.cc %.h도 같은 방식
+$< 는 prerequisites의 첫번째 파일이름 여기서는 $.cc가 된다.
+
+foo.o: foo.cc foo.h
+  g++ -Wall -02 -c foo.cc가 되는것.
+
+자동으로 prerequisite 만들기
+-MD 옵션을 추가
+
+$ g++ -c -MD main.cc
+하면 main.d 파일이 생성된다.
+
+-MD 옵션을 추가해주면, 
+목적 파일 말고도 컴파일 한 소스파일을 타겟으로 하는 의존파일 목록을 담은 파일을 생성
+
+$ cat main.d  
+main.o: main.cc /usr/include/stdc-predef.h foo.h bar.h
+
+의존파일 목록 생성
+/usr/include/std-predef.h는 컴파일러가 암묵적으로 컴파일할 때 참조하는 파일.
+
+이제 make파일에 main.d를 포함시키면 됨
+include main.d를 하거나
+
+-include $(OBJS:.o=.d)
+OBJ의 .o부분을 .d로 대체하라는 의미
+
+같은 타겟에 대해 여러 의존파일 목록들이 정해져있으면 make에 의해 모두 하나로 합쳐짐
+-include는 포함하고자하는 파일이 존재하지않아도 make 메세지를 출력 안함
+맨 처음 make 시 .d파일이 제대로 생성 안돼있으므로 include가 아무 .d파일을 포함안함.
+
+만능 make파일
+
+CC = g++
+
+# C++ 컴파일러 옵션
+CXXFLAGS = -Wall -O2
+
+# 링커 옵션
+LDFLAGS =
+
+# 소스 파일 디렉토리
+SRC_DIR = ./src
+
+# 오브젝트 파일 디렉토리
+OBJ_DIR = ./obj
+
+# 생성하고자 하는 실행 파일 이름
+TARGET = main
+
+# Make 할 소스 파일들
+# wildcard 로 SRC_DIR 에서 *.cc 로 된 파일들 목록을 뽑아낸 뒤에
+# notdir 로 파일 이름만 뽑아낸다.
+# (e.g SRCS 는 foo.cc bar.cc main.cc 가 된다.)
+SRCS = $(notdir $(wildcard $(SRC_DIR)/*.cc))
+
+OBJS = $(SRCS:.cc=.o)
+
+# OBJS 안의 object 파일들 이름 앞에 $(OBJ_DIR)/ 을 붙인다.
+OBJECTS = $(patsubst %.o,$(OBJ_DIR)/%.o,$(OBJS))
+DEPS = $(OBJECTS:.o=.d)
+
+all: main
+
+$(OBJ_DIR)/%.o : $(SRC_DIR)/%.cc
+	$(CC) $(CXXFLAGS) -c $< -o $@ -MD $(LDFLAGS)
+
+$(TARGET) : $(OBJECTS)
+	$(CC) $(CXXFLAGS) $(OBJECTS) -o $(TARGET) $(LDFLAGS)
+
+.PHONY: clean all
+clean:
+	rm -f $(OBJECTS) $(DEPS) $(TARGET)
+
+-include $(DEPS)
+
+notdir 은 앞에 오는 경로를 날려버리고 파일 이름만 깔끔하게 추출
+wildcard 는 함수로 해당 조건에 맞는 파일들을 뽑아내
+patsubst 함수는 $(patsubst 패턴,치환 후 형태,변수) 의 같은 꼴
+
+헤더 파일들을 따로 뽑는 경우
+$ tree
+.
+├── include
+│   ├── bar.h
+│   └── foo.h
+├── Makefile
+├── obj
+└── src
+    ├── bar.cc
+    ├── foo.cc
+    └── main.cc
+
+
+CC = g++
+
+# C++ 컴파일러 옵션
+CXXFLAGS = -Wall -O2
+
+# 링커 옵션
+LDFLAGS =
+
+# 헤더파일 경로
+INCLUDE = -Iinclude/
+
+# 소스 파일 디렉토리
+SRC_DIR = ./src
+
+# 오브젝트 파일 디렉토리
+OBJ_DIR = ./obj
+
+# 생성하고자 하는 실행 파일 이름
+TARGET = main
+
+# Make 할 소스 파일들
+# wildcard 로 SRC_DIR 에서 *.cc 로 된 파일들 목록을 뽑아낸 뒤에
+# notdir 로 파일 이름만 뽑아낸다.
+# (e.g SRCS 는 foo.cc bar.cc main.cc 가 된다.)
+SRCS = $(notdir $(wildcard $(SRC_DIR)/*.cc))
+
+OBJS = $(SRCS:.cc=.o)
+DEPS = $(SRCS:.cc=.d)
+
+# OBJS 안의 object 파일들 이름 앞에 $(OBJ_DIR)/ 을 붙인다.
+OBJECTS = $(patsubst %.o,$(OBJ_DIR)/%.o,$(OBJS))
+DEPS = $(OBJECTS:.o=.d)
+
+all: main
+
+$(OBJ_DIR)/%.o : $(SRC_DIR)/%.cc
+	$(CC) $(CXXFLAGS) $(INCLUDE) -c $< -o $@ -MD $(LDFLAGS)
+
+$(TARGET) : $(OBJECTS)
+	$(CC) $(CXXFLAGS) $(OBJECTS) -o $(TARGET) $(LDFLAGS)
+
+.PHONY: clean all
+clean:
+	rm -f $(OBJECTS) $(DEPS) $(TARGET)
+
+-include $(DEPS)
+
+$ make -j8
+make 가 8 개의 쓰레드에 나뉘어서 실행
+통상적으로 코어 개수 + 1 만큼의 쓰레드를 생성해서 돌리는 것이 가장 속도가 빠릅니다.
+
+$ make -j$(nproc)
+
+으로 하면 $(nproc) 이 알아서 내 컴퓨터의 현재 코어 개수로 치환

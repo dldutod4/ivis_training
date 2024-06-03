@@ -1,0 +1,91 @@
+유일 정의 규칙
+정의와 선언의 차이
+목적코드 생성
+
+유일 정의 규칙(One Difinition Rule - ODR)
+각 traslation unit에 존재하는 모든 변수,함수,클래스,enum,템플릿 등등의 정의는 유일해야함.
+inline이 아닌 모든함수, 변수들의 정의는 전차프로그램에서 유일해야한다. 
+
+정의(Definition)와 선언(Declaration)
+선언(Declaration)이란 TU에 새로운 이름을 도입하거나, 기존에 선언된 이름을 재선언하는 것
+정의는 선언을 포함하는 개념으로, 선언된 개체를 완전히 정의함.
+
+int f(); //선언
+int f(){return 0;} //정의
+class A;//선언
+class A{}//정의
+
+int a; //정의
+extern const int a; //선언
+extern const int b = 1; //정의
+
+struct S {
+  int n;                // S::n 정의
+  static int i;         // S::i 를 선언하지만 정의는 아님
+  inline static int x;  // S::x 를 정의
+};                      // S 를 정의
+int S::i;               // S::i 를 정의
+
+유일정의규칙
+각 TU에 존재하는 모든 변수, 함수, 클래스, enum, 템플릿 등등의 정의가 유일해야하고,
+inline이 아닌 모든 함수들의 정의는 전체프로그램에서 유일해야한다.
+즉 선언은 여러번해도 괜찮다.
+헤더파일에 만약 함수를 정의해버리면
+다른여러파일에서 include하면 odr을 위반하게된다.
+
+
+inline 키워드의 의미
+앞서 ODR에서 inline인 변수나 함수의 경우 이를 사용하고자하는 TU안에 반드시 정의돼있어야한다.
+inline은 원래 이 함수를 호출하는 문장을 그냥 이 함수의 내용으로 치환시켜도 된다 라는 의미였음.
+현재 컴파일러는 굳이 inline이라고 명시 안해도 인라인하는게 성능면에서 낫다고 판단되면 알아서 inline으로 바꾼다.
+이제와서는 의미가 변질되어 일반적 변수 자체도 여러 정의를 허용한다라는 의미로 사용가능.
+
+inline함수는 전체프로그램 여러군데 정의가 있어도 상관 없지만, 
+해당함수를 쓰는 TU안에서는 인라인 함수의 정의가 반드시 들어있어야함.
+
+inline이 아닌 함수의 경우 TU에 반드시 해당함수의 정의가 있을 필요가 없지만, 
+대신 전체 TU에 정의가 반드시 단 한개 있어야함.
+
+inline함수는 헤더파일에도 정의가능.
+
+클래스 내부에 정의된 함수들은 자동으로 inline이다.
+class A {
+ public:
+  int Func() { return 0; }
+};
+따라서 다음 파일을 여러 파일에 include해도 문제가 없다.
+클래스 내부에 정의가 없고 선언만 있을 경우에는 inline으로 분류되지않는다. 그래서 정의가 딱 하나만 있어야한다.
+
+Code Generation
+각 TU에서 문법을 확인 - ODR규칙 적용 후에는 TU별로 어셈블리 코드를 생성함.
+컴파일러가 어셈블리 코드를 생성할 때 모든 TU들을 독립적으로 생성함.
+ODR규칙에 따르면 inline함수의 정의는 전체 TU들에 대해 유일한데 그러면 TU2에 어떤 함수가 정의돼 있다면
+TU1에서는 어떻게 그 함수를 호출할 수 있을까
+
+생성한 목적파일은 사실 일반적인 ELF파일로 LSB(리틀엔디안)형식의 relocatable 파일이다.
+relocatable(재배치가능)이라는 의미는 elf파일을 특정위치에 배치할 수 있다는 것.
+
+목적파일을 뜯어보면
+
+0000000000000000 <main>:
+   0:	f3 0f 1e fa          	endbr64 
+   4:	55                   	push   %rbp
+   5:	48 89 e5             	mov    %rsp,%rbp
+   8:	e8 00 00 00 00       	callq  d <main+0xd>
+   d:	b8 00 00 00 00       	mov    $0x0,%eax
+  12:	5d                   	pop    %rbp
+  13:	c3                   	retq   
+
+callq 에서 some_function을 호출하는데 컴파일단계에서 some_function이 어디배치될지 모르므로
+링킹 전까지 0으로 채우게된다.
+링킹을 통해 이부분을 채우지 못하면 함수를 찾을 수 없다는 오류가 링크단에서 발생하게되는 것.
+
+물론 링커입장에서는 정말 명령이 e8 00 00 00 00 일 수도 있으므로 어떻게 처리할지 정보를 남김
+readelf 프로그램으로 elf파일 정보를 보면 해당파일의 재배치 테이블 정보를 출력
+
+Relocation section '.rela.text' at offset 0x230 contains 1 entry:
+  Offset          Info           Type           Sym. Value    Sym. Name + Addend
+000000000009  000b00000004 R_X86_64_PLT32    0000000000000000 _Z12SomeFunctionv - 4
+
+이것은 _Z12SomeFunctionv심볼의 정보를 R_X86_64_PLT32의 방식으로 덮어씌우라고 링커에게 알려주는것.
+

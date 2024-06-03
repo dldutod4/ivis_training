@@ -1,0 +1,3 @@
+/home/kjwoo9467/training/ivis_training/kjwoo/new_structure/ch10_4/build/CMakeFiles/testCode.dir
+/home/kjwoo9467/training/ivis_training/kjwoo/new_structure/ch10_4/build/CMakeFiles/edit_cache.dir
+/home/kjwoo9467/training/ivis_training/kjwoo/new_structure/ch10_4/build/CMakeFiles/rebuild_cache.dir

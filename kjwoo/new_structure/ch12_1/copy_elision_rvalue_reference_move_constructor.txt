@@ -1,0 +1,95 @@
+#include <iostream>
+
+class A {
+  int data_;
+
+ public:
+  A(int data) : data_(data) { std::cout << "일반 생성자 호출!" << std::endl; }
+
+  A(const A& a) : data_(a.data_) {
+    std::cout << "복사 생성자 호출!" << std::endl;
+  }
+};
+
+int main() {
+  A a(1);  // 일반 생성자 호출
+  A b(a);  // 복사 생성자 호출
+
+  // 그렇다면 이것은?
+  A c(A(2));
+}
+
+일반생성자 한번만 호출된다.
+굳에 임시객체A(2)를 만들필요 없이 c를 A(2)로 만들면돼서 컴파일러가 알아서 생략한다.
+반드시 생략하는 것은 아니고 생략할 수도 있다가 표준이다.
+
+좌측값 - 주소를 취할 수 있는 값.
+좌측값은 왼쪽과 좌측 모두에 올 수 있다.
+주소르 취할 수 없는 값을 우측값이며 우측에만 와야한다.
+
+지금까지 배운 레퍼런스는 좌측값에만 레퍼런스를 가질 수 있다.
+&하나만 이용해 정의하는 레퍼런스를 lvalue reference라고 부르며 좌측값레퍼런스 자체도 좌측값이다.
+
+int& func1(int& a) { return a; } //좌측값을 리턴
+int func2(int b) { return b; } //우측값을 리턴
+
+int main() {
+  int a = 3;
+  func1(a) = 4; //좌측값레퍼런스가 좌측에 있으므로 문제 없음.
+  std::cout << &func1(a) << std::endl;
+
+  int b = 2;
+  a = func2(b);               // 가능 우측값레퍼런스가 우측에 있으니 문제 없음
+  func2(b) = 5;               // 오류 1 우측값레퍼런스가 좌측에 있으니 오류
+  std::cout << &func2(b) << std::endl;  // 오류 2 우측값은 주소를 취할 수 없으니 오류
+
+}
+
+
+MyString str3(str1.operator+(str2));
+
+str1.operator+(str2)는 우측값 MyString을 반환한다.
+
+MyString(const MyString &str);
+
+그런데 어떻게 좌측값레퍼런스를 인자를받는 생성자에 우측값을 넣을 수 있었을까
+
+const T&에 한해서만 우측값도 레퍼런스로 받을 수 있기 때문이다.
+임시로 객체의 값을 참조만할 뿐 변경할 수 없어서 가능하다.
+
+이동생성자
+어차피 삭제될 임시객체인데 그냥 임시객체가 할당해놓은 값들을 그대로 새 객체가 쓰면 안될까?
+새로만든 객체의 string_content를 임시객체의 string_content가 가리키는 값을 가리키게하면 되는데
+문제는 임시객체가 소멸하면서 string_content를 메모리 해제해 버므로
+임시객체의 string_content를 nullptr로 바꾸고 소멸자가 nullptr이면 delete를 하지않도록 하면된다.
+
+그렇지만 기존 복사생성자는 const MyString&이기때문에 nullptr로 바꾸는 것이 불가능 하다.
+이는 const MyString&가 좌측값과 우측값을 둘다 받을 수 있어 발생한다.
+
+우측값만을 받는 방법이(임시객체가 인자로 들어오는 경우만 따로 처리하는 경우) 필요하다
+
+  // 이동 생성자
+  MyString(MyString &&str); //우측값의 레퍼런스는 &&를 두개 사용해 정의한다.
+  str자체는 좌측값이다.
+
+이제 좌측값인 str이 레퍼런스하고 있는 우측값 임시객체가 할당하고 있는 메모리를 새 객체에 옮겨주면된다.
+주소값만 복사하면 되므로 매우 간단하다.
+
+MyString(MyString &&str){
+    string_content = str.string_content;
+    str.string_content = nullptr //이제 const가 아니므로 수정이 가능하다!
+}
+~MyString(){
+    if(string_content != nullptr) delete[] string_content;
+}
+
+우측값 레퍼런스는 임시객체가 소멸하지않도록 붙잡고있는다.
+MyString&& str3 = str1 + str2;
+str3.println();
+
+이동생성자 작성시 주의점
+MyString을 c++ 컨테이너 즉 vector같은데 넣을 때 이동생성자를 반드시 noexcept로 명시해야한다.
+vector를 예시로보면 원소추가시 메모리가 부족하면 새로 다시 복사하는데 이때 복사생성과정에서 예외가 발생했다면
+복사생성자였다면 새로할당한 메모리를 소멸시키고 예외를 전달하면된다.
+그런데 이동생성중에 예외가 발생하면 원래의 메모리 일부가 이미 nullptr가 돼있으므로 이동시킨 메모리를 해제해버리면 데이터를 잃어버리게 된다.
+즉 예외를 발생시키지않는 noexcept가 아니면 이동생성자를 사용하지 않는다.noexcept가 붙어있지않으면 무시하고 복사생성자로 메모리를 재할당할 것이다.

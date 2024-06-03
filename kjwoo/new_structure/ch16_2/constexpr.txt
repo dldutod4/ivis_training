@@ -1,0 +1,205 @@
+constexpr 키워드는 객체나 함수 앞에 붙일 수 있는 키워드로, 
+해당 객체나 함수의 리턴값을 컴파일 타임에 값을 알 수 있다 라는 의미
+
+컴파일러가 컴파일 타임에 어떠한 식의 값을 결정할 수 있다면 해당 식을 상수식 (Constant expression) 이라고 표현합니다. 
+그리고 이러한 상수식들 중에서 값이 정수인 것을 정수 상수식(Integral constant expression)\
+
+constexpr이라고 명시하면 그 객체는 어떤 상수식에나 사용될 수 있다.
+#include <iostream>
+
+template <int N>
+struct A {
+  int operator()() { return N; }
+};
+
+int main() {
+  constexpr int size = 3;
+  int arr[size];  // Good!
+
+  constexpr int N = 10;
+  A<N> a;  // Good!
+  std::cout << a() << std::endl;
+
+  constexpr int number = 3;
+  enum B { x = number, y, z };  // Good!
+  std::cout << B::x << std::endl;
+}
+
+int 배열선언시 길이나 템플릿 인자는 상수식이어야하는데 constexpr로 선언한 객체를 사용할수 있는것.
+
+const랑 차이는?
+int a;
+
+a=3;
+const int b = a;
+const는 컴파일타임에 그값을 알필요가 없다. 값을 지정했을 때부터 바꿀수 없다는 것 뿐.
+constexpr 변수는 선언시 반드시 오른쪽에 다른 상수식이 와야한다.
+int a;
+
+// Do something...
+
+constexpr int b = a;  // ??
+a는 상수식이 아니므로 컴파일오류가 난다.
+
+const int ci = 3; 은 런타임에 초기화될지 컴파일타임에 초기화될지 모른다
+constexpr은 const지만 const는 constexpr이 아니다.
+
+ constexpr 함수
+
+앞서 constexpr 로 객체를 선언한다면 해당 객체는 컴파일 타임 상수로 정의된다고 하였습니다. 
+그렇다면 컴파일 타임 상수인 객체들을 만들어내는 함수를 정의할 수 는 없을까요?
+
+constexpr 키워드가 등장하기 이전에는 컴파일 타임 상수인 객체를 만드는 함수를 작성하는 것이 불가능 하였습니다. 
+예를들어 
+template <int N>
+struct A {
+  int operator()() { return N; }
+};
+
+int main() {
+  A<Factorial(10)> a;
+}
+는 원래 불가능했어서 이렇게하려면 템플릿 메타 프로그래밍을 해야했지만
+
+이제 factorial 함수를 constexpr로 선언하면 컴파일 타임에 계산되어 템플릿 인자로 들어가게된다.
+
+constexpr 함수는 다음을 할수 없다
+    goto 문 사용
+
+    예외 처리 (try 문; C++ 20 부터 가능하게 바뀌었습니다.)
+
+    ?리터럴 타입?이 아닌 변수의 정의
+
+    초기화 되지 않는 변수의 정의
+
+    실행 중간에 constexpr 이 아닌 함수를 호출하게 됨
+
+컴파일 타임 상수가 아닌 값을 전달했다면 그냥 일반함수 처럼 동작함. 따라서 붙일 수 있으면 붙여주는게 좋다
+
+리터럴 타입?
+리터럴 타입은 쉽게 생각하면 컴파일러가 컴파일 타임에 정의할 수 있는 타입
+    void 형
+
+    스칼라 타입 (char, int, bool, long, float, double) 등등
+
+    레퍼런스 타입
+
+    리터럴 타입의 배열
+
+    혹은 아래 조건들을 만족하는 타입
+
+        디폴트 소멸자를 가지고
+
+        다음 중 하나를 만족하는 타입
+
+            람다 함수
+
+            Arggregate 타입 (사용자 정의 생성자, 소멸자가 없으며 모든 데이터 멤버들이 public)
+
+            쉽게 말해 pair 같은 애들을 이야기함
+
+            constexpr 생성자를 가지며 복사 및 이동 생성자가 없음
+
+ constexpr 생성자
+
+constexpr 로 생성자의 경우 일반적인 constexpr 함수에서 적용되는 제약조건들이 모두 적용
+
+class Vector {
+ public:
+  constexpr Vector(int x, int y) : x_(x), y_(y) {}
+
+  constexpr int x() const { return x_; }
+  constexpr int y() const { return y_; }
+
+ private:
+  int x_;
+  int y_;
+};
+
+constexpr Vector v1{1, 2}; //생성자가 constexpr이므로 객체 생성가능
+constexpr Vector v2{2, 3};
+
+A<v1.x()> a; //v1도 constexpr 생성자가 생성한 constexpr 객체이고, x()역시 constexpr함수이므로 constexpr 인 1이 된다.
+//따라서 A<1> a와 같다.
+
+if constexpr
+타입에 따라 형태가 달라지는 함수를짜고싶다면
+인자가 포인터 타입이면 * 을 한 것을 리턴하고 아니면 그냥 원래의 인자를 리턴하는 함수
+
+#include <iostream>
+
+template <typename T>
+void show_value(T t) {
+  std::cout << "포인터가 아니다 : " << t << std::endl;
+}
+
+template <typename T>
+void show_value(T* t) {
+  std::cout << "포인터 이다 : " << *t << std::endl;
+}
+
+int main() {
+  int x = 3;
+  show_value(x);
+
+  int* p = &x;
+  show_value(p);
+}
+
+위는 두번써야하는데다 어떤형태의 T를 요구하는지 알기 어렵다.
+<type_traits> 에서는 여러가지 템플릿 함수들을 제공하는데, 이들 중 해당 타입이 포인터 인지 아닌지 확인하는 함수도 있다.
+
+#include <iostream>
+#include <type_traits>
+
+template <typename T>
+void show_value(T t) {
+  if (std::is_pointer<T>::value) {
+    std::cout << "포인터 이다 : " << *t << std::endl;
+  } else {
+    std::cout << "포인터가 아니다 : " << t << std::endl;
+  }
+}
+
+int main() {
+  int x = 3;
+  show_value(x);
+
+  int* p = &x;
+  show_value(p);
+}
+위의 경우 컴파일 에러가 발생한다.
+
+void show_value(int t) {
+  if (std::is_pointer<int>::value) {
+    std::cout << "포인터 이다 : " << *t << std::endl;
+  } else {
+    std::cout << "포인터가 아니다 : " << t << std::endl;
+  }
+}
+t는 int타입인데 *이 붙으니 컴파일 에러가 발생한다.
+
+#include <iostream>
+#include <type_traits>
+
+template <typename T>
+void show_value(T t) {
+  if constexpr (std::is_pointer<T>::value) {
+    std::cout << "포인터 이다 : " << *t << std::endl;
+  } else {
+    std::cout << "포인터가 아니다 : " << t << std::endl;
+  }
+}
+
+int main() {
+  int x = 3;
+  show_value(x);
+
+  int* p = &x;
+  show_value(p);
+}
+if constexpr 은 조건이 반드시 bool 로 타입 변환될 수 있어야 하는 컴파일 타임 상수식이어야만 한다.
+이러면 조건 상수식이 옳으면 else에 해당하는 부분은 아예 컴파일되지 않는다.
+틀린경우에는 else만 컴파일된다.
+
+C++ 20 은 아직 나오지 않았지만, 추가될 기능들 중에 constexpr vector (!!) 와 constexpr string (!!!) 이 있습니다.

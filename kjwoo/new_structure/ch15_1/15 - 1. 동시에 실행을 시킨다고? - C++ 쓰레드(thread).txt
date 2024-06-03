@@ -1,0 +1,63 @@
+프로세스와 쓰레드
+cpu에서 구동되는 프로그램의 단위를 쓰레드(Thread)라고 부른다.
+한 프로세스당 최소 1개의 쓰레드로 구성되어있으며
+여러 쓰레드로 구성된 경우 multiThread프로그램이라한다.
+
+프로세스는 서로 메모리를 공유하지않지만
+쓰레드는 메모리를 서로 공유한다.
+
+쓰레드로 동시에 돌리는 것이 병렬화
+
+그러나 모든작업을 병렬화 가능하진 않다.
+작업간에 의존성이 있는 경우 효율성이 떨어지게 된다.
+
+#include<thread>
+
+..
+thread t1(func1);
+thread t2(func2);
+
+thread객체에 함수를 전달하여 생성하면
+스레드가 생성되어 함수를 실행시킨다.
+이때
+t1.join()
+t2.join()
+으로 리턴하게 된다.
+설령 t2가 먼저 끝나더라도 t1.join() 이후 t2.join()에서 t2가 이미끝나있다면 바로 리턴하게된다.
+
+join()을 하지않으면 스레드가 종료되길 기다리지 않고 메인함수가 종료될 수 있고
+그러면 실행이 다 끝나지않은 스레드의 소멸자가 호출되는데 그러면 예외가 발생된다.
+
+detach()
+
+t1.detach()
+t2.detach()를 하게 되면 해당 스레드를 실행시킨후 잊어버리는 것이다.
+t1, t2가 실행되게 냅두고 main함수를 실행시키고 종료할때도 t1, t2가 실행중이라도 신경쓰지 않는다.
+
+
+스레드에 인자 전달하기.
+
+void worker(vector<int>::iterator start, vector<int>::iterator end,int* result);
+vector<thread> workers;
+for (int i = 0; i < 4; i++) {
+  workers.push_back(thread(worker, data.begin() + i * 2500, data.begin() + (i + 1) * 2500, &partial_sums[i]));
+}
+
+thread의 첫 인자는 Callable
+를 넣고 다음 인자부터는 해당 함수에 전달할 인자들을 써주면 된다.
+thread(callable,para1,para2...,int* result)
+스레드는 반환값은 없으므로 반환하고싶으면 포인터를 사용해야한다. (int* result)
+
+또한 thread::id this_id = std::this_thread::get_id()로 스레드의 아이디를 알 수 있다.
+
+스레드 내에서 cout과 printf와의 차이
+std::cout 의 경우 
+std::cout << A<<B가 있을때
+A를 출력하는 중에 다른 스레드가 출력할 수 없도록 보장을 해준다( 컨텍스트 스위칭을 막는 것은 아님)
+그러나 A출력이후 B출력 전에 다른 스레드가 내용을 출력할 수 있다.
+
+printf의 경우에는 " " 안의 문자열을 출력할때 컨텍스트 스위치가 되더라도 메시지를 못집어넣게 막기때문에
+전체 문장을 제대로 출력할 수 있게 해준다.
+
+스레드끼리는 메모리를 공유한다
+그런데 스레드가 같은 메모리에 동시에 접근한다면 어떻게 될까. 

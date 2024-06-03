@@ -1,0 +1,47 @@
+템플릿을 활용해 런타임이 아닌 컴파일타임에 연산을하는 것이다.
+
+템플릿이 컴파일타임에 필요한 경우에만 인스턴스를 만드는 것을 이용한다.
+만들어진 타입 인스턴스로 연산하고 새로운 타입을 만드는 것으로 연산이 가능하다.
+
+새로운 Int 타입을 만들고 타입이 아닌 인자를 넣어 값을 저장시킨다.
+template <int N>
+struct Int {
+  static const int num = N; //static은 객체를 생성하지않고도 존재하고 모든 클래스가 공유한다. 
+                            // 객체생성은 런타임에 일어나는것이므로 객체를 생성하지 않고 값을 저장하기위해 필요
+};
+
+타입끼리 연산을 시키고 새로운 타입을 만들어 연산결과를 만든다.
+template <typename T, typename U>
+struct add {
+  typedef Int<T::num + U::num> result;
+};
+
+int main() {
+  typedef Int<1> one; //one을 새로운 타입 Int<1>으로 정의한다. static const Int<1>::num에는 1이 들어있다.
+  typedef Int<2> two; //two을 새로운 타입 Int<2>으로 정의한다. static const Int<2>::num에는 2이 들어있다.
+
+  typedef add<one, two>::result three; //result는 Int<Int<1>::num +Int<2>::num> -> Int<3> 이다. Int<3>::num = 3이다.
+
+  std::cout << "Addtion result : " << three::num << std::endl;
+}
+
+///////////////////// tmp활용 팩토리얼 연산
+template <int N>
+struct Factorial {
+  static const int result = N * Factorial<N - 1>::result; 
+};
+
+template <>
+struct Factorial<1> {
+  static const int result = 1;
+};
+
+
+//using
+using으로 typedef를 대체가능
+
+typedef Ratio_add<rat, rat2> rat3;
+using rat3 = Ratio_add<rat,rat2>;
+
+는 같다
+이해가 더쉽다.

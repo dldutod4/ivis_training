@@ -1,0 +1,165 @@
+연관 컨테이너
+key - value구조를 갖는다
+
+set, multiset
+map, multimap
+
+set은 특정자료가 존재하는지만 알 수있고
+map은 특정자료에 대응하는 값이 무엇인지를 알 수있다.
+
+map을 set처럼 쓸수 있지만 메모리가 보다 크기때문에 존재유무만 궁금할때는 set을 쓴다.
+
+set<int> s;
+s.insert(10);
+어디에다 추가할지에 대한 정보가 없음.
+
+추가 또는 지우는 작업 O(logN)에 처리
+셋도 리스트처럼 원소에 순차적으로 접근하는 것만 가능하다.
+그리고 set은 정렬된 상태를 유지하며 추가한다.
+
+find함수를 제공하며 찾으면 iterator를 반환하고 못찾으면 s.end()를 반환한다.
+
+트리구조를 가지고있기때문에 검색이 빠르다.
+중복된 원소를 가지지않는다.
+
+객체를 set에 넣고싶을 때
+각 객체간 비교를 위해 operator<를 정의해야한다.
+
+bool operator<(const Todo& t) const {
+  if (priority == t.priority) {
+    return job_desc < t.job_desc;
+  }
+  return priority > t.priority;
+}
+
+반드시 위의 형태로 함수를 작성해야한다.
+이를 지켜야 하는 이유는 셋 내부적으로 정렬 시에 상수 반복자를 사용하는데 상수함수만을 호출할 수 있기 때문.
+
+그리고 중요도 같을 때를 따로 처리해야함.
+왜냐면 set에서 A와 B가 같은지 다른지 판별할때 ==으로 판별하지 않음
+A<B 도 false이고 B<A도 false이면 같은 것으로 판별함
+
+operator< 는 다음 조건을 만족해야함
+    A < A 는 거짓
+
+    A < B != B < A
+
+    A < B 이고 B < C 이면 A < C
+
+    A == B 이면 A < B 와 B < A 둘 다 거짓
+
+    A == B 이고 B == C 이면 A == C
+
+외부객체를 쓰는경우에는 어떻게 할까
+struct TodoCmp {
+  bool operator()(const Todo& t1, const Todo& t2) const {
+    if (t1.priority == t2.priority) {
+      return t1.job_desc < t2.job_desc;
+    }
+    return t1.priority > t2.priority;
+  }
+};
+
+std::set<Todo, TodoCmp> todos; //함수객체를 전달한다.
+
+맵
+맵은 키에 대응되는 값까지 같이 보관한다
+
+맵은 템플릿 인자를 2개 갖는다. 키의 타입과 값의 타입
+맵에 원소를 넣기위해서는 pair객체를 전달해야한다.
+
+template <class T1, class T2>
+struct std::pair {
+  T1 first;
+  T2 second;
+};
+std::pair<std::string, double>("박찬호",3.33) 으로 넣을 수도있지만
+std::make_pair("박찬호",3.33)으로 만드는게 더 편하다.
+
+map<std::string, double> m;
+m.insert(make_pair("박찬호",3.33));
+m["손흥민"] = 2.22; 로 넣을 수도 있다.
+이미 존재하는 값이면 값이 대체된다.
+
+범위 반복문
+for (const auto& kv : m) {
+    std::cout << kv.first << " " << kv.second << std::endl;
+}
+맵에들어있는 pair객체들을 가져온다.
+
+m["박찬호"] 로 값을 바로 가져올수도 있지만
+주의 할 점은 맵의 없는 키를 참조하면 디폴트생성자를 호출해서 원소를 추가해버린다.
+즉 find함수로 존재를 먼저 확인하고 참조하는 것이 좋다.
+
+find함수는 해당키를 찾아 반복자를 리턴한다.
+중복원소를 허용하지 않으며 insert는 무시된다.
+
+멀티셋과 멀티맵
+중복원소를 허락한다.
+
+그런데 한개의 키에 여러 값이 대응될 수 있으므로
+[]연산자를 제공하지않는다.
+find를 쓰면 해당 값중 아무거나 리턴한다. // 라이브러리마다 다름
+equal_range -> 이 키에 대응되는 원소들의 반복자들 중 begin(), end()를 pair로 만들어 리턴해줌.
+auto range = m.equal_range(1); 
+for (auto itr = range.first; itr != range.second; ++itr) {
+  std::cout << itr->first << " : " << itr->second << " " << std::endl;
+}
+
+
+정렬되지 않은 셋과 맵
+원소들이 순서대로 정렬이 안된다.
+그렇지만 insert,erase,find가 모두 o(1)으로 수행됨.
+
+이는 해시함수를 이용한 것으로
+해시함수란 특정값에 대응되는 특정값을 반환하는 함수로
+상수시간만에 작동하는 특성을 사용해
+값을 어디에 저장할지 를 해시함수로 구해 넣고
+불러올때 똑같이 해시함수에 넣으면 어디에 저장했는지 바로 알 수 있다.
+원소가 늘어나면서 해시함수를 바꿔야할 때는 rehash작업을 거치면 o(n)만큼 시간이 걸린다.
+
+사용법은 set, map과 같으나
+내가만든 클래스를 원소로 넣으려면 해시함수를 직접 만들어 넣어야한다.
+기본적인 타입들에 대한 해시함수들을 제공하고있음
+
+class Todo {
+  int priority;  // 중요도. 높을 수록 급한것!
+  std::string job_desc;
+
+ public:
+  Todo(int priority, std::string job_desc)
+      : priority(priority), job_desc(job_desc) {}
+
+  bool operator==(const Todo& t) const {
+    if (priority == t.priority && job_desc == t.job_desc) return true;
+    return false;
+  }
+
+  friend std::ostream& operator<<(std::ostream& o, const Todo& t);
+  friend struct std::hash<Todo>;
+};
+
+// Todo 해시 함수를 위한 함수객체(Functor)
+// 를 만들어줍니다!
+namespace std {
+template <> //hash함수의 Todo객체 버전.
+struct hash<Todo> {
+  size_t operator()(const Todo& t) const {
+    hash<string> hash_func; //string반환 함수객체
+
+    return t.priority ^ (hash_func(t.job_desc)); //int와 string을 xor해서 hash를 반환하는 함수객체.
+  }
+};
+}
+
+    데이터의 존재 유무 만 궁금할 경우 → set
+
+    중복 데이터를 허락할 경우 → multiset (insert, erase, find 모두 O(log⁡N)O(logN). 최악의 경우에도 O(log⁡N)O(logN))
+
+    데이터에 대응되는 데이터를 저장하고 싶은 경우 → map
+
+    중복 키를 허락할 경우 → multimap (insert, erase, find 모두 O(log⁡N)O(logN). 최악의 경우에도 O(log⁡N)O(logN))
+
+    속도가 매우매우 중요해서 최적화를 해야하는 경우 → unordered_set, unordered_map
+
+    (insert, erase, find 모두 O(1)O(1). 최악의 경우엔 O(N)O(N) 그러므로 해시함수와 상자 개수를 잘 설정해야 한다!)

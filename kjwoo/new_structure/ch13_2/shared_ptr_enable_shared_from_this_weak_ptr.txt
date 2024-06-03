@@ -1,0 +1,177 @@
+    shared_ptr
+
+    enable_shared_from_this
+
+    weak_ptr
+
+shared_ptr
+스마트 포인터
+unique_ptr과는 달리 다른 shared_ptr도 그 객체를 가리킬 수 있다.
+
+std::shared_ptr<A> p1(new A());
+std::shared_ptr<A> p2(p1);  // p2 역시 생성된 객체 A 를 가리킨다.
+
+// 반면에 unique_ptr 의 경우
+std::unique_ptr<A> p1(new A());
+std::unique_ptr<A> p2(p1);  // 컴파일 오류!
+
+shared_ptr들이 몇개의 원래 객체를 가리키는지 세다가 0이되면 객체를 해제할 수 있어야한다.
+shared_ptr의 참조 개수가 몇인지는 use_count()함수를 통해 알 수 있다
+그런데 참조개수를 shared_ptr 내부에 저장하면 shared_ptr마다 참조개수가 달라지게된다.
+이런 문제를 방지하게 위해 shared_ptr가 제어블록을 동적으로 할당한 후 shared_ptr끼리
+제어블록에 필요한 정보를 공유하는 방식으로 구현
+
+shared_ptr은 복사생성할 때마다 해당 제어블록의 위치만 공유하면되고, 
+shared_ptr가 소멸할 때마다 블록의 참조개수를 하나 줄이고
+생성 시마다 하나 을리는 방식으로 작동한다.
+
+make_shared
+std::shared_ptr<A> p1(new A());
+위와 같은 할당은 A를 우선 동적할당하고 shared_ptr의 제어블록도 동적으로 할당해서
+두번의 동적 할당이 발생한다.
+동적할당은 비싼연산이므로 두개를 합쳐할당하는게 훨씬 빠르다
+make_shared함수는 A생성자를 받아 객체 A와 shared_ptr의 제어블록까지 한번에 동적할당한 후 shared_ptr를 리턴한다.
+
+shared_ptr 생성 시 주의 할 점
+shared_ptr은 인자로 주소값이 주어지면 해당객체를 처음으로 소유하는 것처럼 행동한다.
+
+A* a = new A();
+std::shared_ptr<A> pa1(a);
+std::shared_ptr<A> pa2(a);
+이렇게 되면 pa1과 pa2가 각각 제어블록을 생성하기때문에
+각각 다른 제어블록들의 존재를모르고 참조개수를 1로 설정하게 된다.
+이상태에서 한쪽 포인터가 객체를 소멸시키면
+다른쪽이 이미 해제된 객체의 메모리를 해제해 오류가 발생합니다.
+
+객체 내부에서 자기자신을 가리키는 shared_ptr을 만드는 경우
+class A {
+  int *data;
+
+ public:
+  A() {
+    data = new int[100];
+    std::cout << "자원을 획득함!" << std::endl;
+  }
+
+  ~A() {
+    std::cout << "소멸자 호출!" << std::endl;
+    delete[] data;
+  }
+
+  std::shared_ptr<A> get_shared_ptr() { return std::shared_ptr<A>(this); }
+};
+
+get_shared_ptr함수 실행시 이미 자신을 가리키는 shared_ptr가 있는 것을 모르고 제어블록을 생성한다.
+
+enable_shared_from_this으로 해결이 가능하다.
+this를 사용해 shared_ptr을 만들고싶은 클래스가 있다면
+enable_shared_from_this를 상속받으면 된다.
+
+class A : public std::enable_shared_from_this<A> { //상속받으면
+  int *data;
+
+ public:
+  A() {
+    data = new int[100];
+    std::cout << "자원을 획득함!" << std::endl;
+  }
+
+  ~A() {
+    std::cout << "소멸자 호출!" << std::endl;
+    delete[] data;
+  }
+
+  std::shared_ptr<A> get_shared_ptr() { return shared_from_this(); }
+};
+
+enable_shared_from_this 클래스에는 shared_from_this 라는 멤버 함수를 정의하고 있는데, 
+이 함수는 이미 정의되어 있는 제어 블록을 사용해서 shared_ptr 을 생성
+
+한가지 중요한것은 해당객체의 shared_ptr가 먼저 정의되어 있어야만한다.
+shared_from_this는 있는 제어블록을 확인만하고 없는 제어블록을 만들어주진않는다.
+
+서로 참조하는 shared_ptr
+shared_ptr을 가지고있는 객체가 2개있는데
+각 shared_ptr이 서로를 참조하고 있다고 하면 순환참조가 되어 두 객체 모두 파괴할 수없게된다.
+객체1을 파괴하려면 객체2가파괴돼야하고 객체2를 파괴하려면 객체1을 파괴돼야하기때문.
+
+
+weak_ptr
+위의 문제를 해결하기위해 도입
+객체를 참조할수 있는 스마트포인터지만 참조개수를 늘리진 않는다.
+weak_ptr이 가리키더라도 다른 shared_ptr이 가리키지 않으면 메모리에서 소멸한다.
+
+사용시 shared_ptr변환해서 사용해야한다.
+이 때 가리키고있는 객체가 이미 소멸되었다면 빈 shared_ptr로 변환되고 
+아닐 경우 해당객체를 가리키는 shared_ptr로 변환된다.
+
+#include <iostream>
+#include <memory>
+#include <string>
+#include <vector>
+
+class A {
+  std::string s;
+  std::weak_ptr<A> other;
+
+ public:
+  A(const std::string& s) : s(s) { std::cout << "자원을 획득함!" << std::endl; }
+
+  ~A() { std::cout << "소멸자 호출!" << std::endl; }
+
+  void set_other(std::weak_ptr<A> o) { other = o; }
+  void access_other() {
+    std::shared_ptr<A> o = other.lock();
+    if (o) {
+      std::cout << "접근 : " << o->name() << std::endl;
+    } else {
+      std::cout << "이미 소멸됨 ㅠ" << std::endl;
+    }
+  }
+  std::string name() { return s; }
+};
+
+int main() {
+  std::vector<std::shared_ptr<A>> vec;
+  vec.push_back(std::make_shared<A>("자원 1"));
+  vec.push_back(std::make_shared<A>("자원 2"));
+
+  vec[0]->set_other(vec[1]);
+  vec[1]->set_other(vec[0]);
+
+  // pa 와 pb 의 ref count 는 그대로다.
+  std::cout << "vec[0] ref count : " << vec[0].use_count() << std::endl;
+  std::cout << "vec[1] ref count : " << vec[1].use_count() << std::endl;
+
+  // weak_ptr 로 해당 객체 접근하기
+  vec[0]->access_other();
+
+  // 벡터 마지막 원소 제거 (vec[1] 소멸)
+  vec.pop_back();
+  vec[0]->access_other();  // 접근 실패!
+}
+
+///////////////////////////////////////////
+void access_other() {
+  std::shared_ptr<A> o = other.lock();
+  if (o) {
+    std::cout << "접근 : " << o->name() << std::endl;
+  } else {
+    std::cout << "이미 소멸됨 ㅠ" << std::endl;
+  }
+}
+
+other.lock()은 해당포인터가 가리키는 
+객체가 살아있다면 해당객체를 가리키는 shared_ptr을 반환하고
+이미 해제된 객체이면 아무것도 가리키지않는 shared_ptr을 반환함.
+아무것도 가리키지않는 shared_ptr는 false로 형변환 되기때문에
+if 조건을 처리해줄 수 있다.
+
+참조개수가 0이될때 제어블록 역시 해제해야하는가?
+shared_ptr은 0개이고 weak_ptr만 남았을때 제어블록마저 해제하면
+weak_ptr사용시에 제어블록에서 참조카운트가 0이라는 사실을 알 수 없게된다.
+
+그래서 제어블록을 메모리에서 해제하기위해서는 weak_ptr 역시 0개여야하므로
+제어블록은 참조개수와 약한참조 개수도 기록을한다.
+
+
