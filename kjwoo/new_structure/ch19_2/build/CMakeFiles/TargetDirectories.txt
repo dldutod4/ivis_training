@@ -1,0 +1,6 @@
+/home/kjwoo9467/training/ivis_training/kjwoo/new_structure/ch19_2/build/CMakeFiles/program.dir
+/home/kjwoo9467/training/ivis_training/kjwoo/new_structure/ch19_2/build/CMakeFiles/edit_cache.dir
+/home/kjwoo9467/training/ivis_training/kjwoo/new_structure/ch19_2/build/CMakeFiles/rebuild_cache.dir
+/home/kjwoo9467/training/ivis_training/kjwoo/new_structure/ch19_2/build/lib/CMakeFiles/shape.dir
+/home/kjwoo9467/training/ivis_training/kjwoo/new_structure/ch19_2/build/lib/CMakeFiles/edit_cache.dir
+/home/kjwoo9467/training/ivis_training/kjwoo/new_structure/ch19_2/build/lib/CMakeFiles/rebuild_cache.dir

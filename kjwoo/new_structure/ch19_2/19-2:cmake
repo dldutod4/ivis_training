@@ -1,0 +1,126 @@
+CMake 는 빌드 파일을 생성해주는 프로그램
+CMake 를 통해서 빌드 파일을 생성하면 빌드 프로그램을 통해서 프로젝트를 빌드
+
+CMake 를 사용하는 모든 프로젝트에는 반드시 프로젝트 최상위 디렉토리에 CMakeLists.txt 파일이 있어야함
+
+CMakeLists.txt -> cmake -> Makefile -> make -> 실행파일
+
+# CMake 프로그램의 최소 버전
+cmake_minimum_required(VERSION 3.11)
+
+# 프로젝트 정보  첫줄 프로젝트이름은 필수
+project(
+  ModooCode
+  VERSION 0.1
+  DESCRIPTION "예제 프로젝트"
+  LANGUAGES CXX)
+
+add_executable (program main.cc foo.cc) //필요한 파일 나열
+
+target_compile_options(<실행 파일 이름> PUBLIC <컴파일 옵션1> <컴파일 옵션2> ...) //컴파일 옵션 지정.
+target_compile_options(program PUBLIC -Wall -Werror) 모든 경고표시. 경고는 컴파일오류로 간주.
+
+타겟이란 프로그램을 구성하는 요소들 실행파일, 라이브러리파일 ...
+target과 property
+모든 명령은 타겟들을 기준으로 돌아가며 각 타겟에는 속성을 정의할 수 있다.
+모든 CMake명령은 타겟을 정의하고 해당 타겟들의 속성을 지정하는 명령들로 이루어진 것이다.
+
+include 경로 지정하기
+#include <> 의 형태로 include 되는 헤더 파일들은 
+시스템 경로에서 찾고, 
+#include "" 의 형태로 include 된 헤더 파일의 경우는 
+따로 지정하지 않는 이상 현재 코드의 위치를 기준으로 찾습니다.
+
+하지만 경우에 따라서 (특히 나중에 라이브러리 만들 시에 더욱) 
+헤더 파일들을 다른 곳에 위치시키는 경우가 있는데 
+컴파일러가 해당 파일들을 찾기 위해서는 컴파일 시에 따로 경로를 지정해줘야 합니다.
+target_include_directories(program PUBLIC ${CMAKE_SOURCE_DIR}/includes)
+상대경로를 쓰는편이 좋다.
+
+라이브러리만들기
+특정 역할을 수행하는 코드를 모아둔 것.
+lib폴더 생성후 shape.cc 생성
+includes에 shape.h 생성
+lib폴더에 CMakeLists.txt 생성
+
+# /lib/CMakeLists.txt
+
+# 정적 라이브러리 shape 를 만든다.
+add_library(shape STATIC shape.cc)
+#STATIC 으로 명시하면 정적 라이브러리를, 
+#SHARED 로 설정하면 동적으로 링크되는 동적 라이브러리를, 
+#MODULE 로 명시하면, 동적으로 링크되지는 않지만, 
+#dlopen 과 같은 함수로 런타임 시에 불러올 수 있는 라이브러리를 생성
+
+# 해당 라이브러리 컴파일 시 사용할 헤더파일 경로
+target_include_directories(shape PUBLIC ${CMAKE_SOURCE_DIR}/includes) 
+#이 라이브러리를 컴파일하거나 다른 타겟이 이 라이브러리를 참조할때 헤더파일 탐색경로에 해당 경로를 추가한다.
+
+# 해당 라이브러리를 컴파일 할 옵션
+target_compile_options(shape PRIVATE -Wall -Werror) 
+#PRIVATE 이 라이브러리를 사용하는 타겟들에게 까지 옵션을 강제하지않도록 물려주지 않는다.
+
+프로젝트 CMakeLists.txt에 라이브러리 추가한다
+
+# CMake 프로그램의 최소 버전
+cmake_minimum_required(VERSION 3.11)
+
+# 프로젝트 정보
+project(
+  ModooCode
+  VERSION 0.1
+  DESCRIPTION "예제 프로젝트"
+  LANGUAGES CXX)
+
+# 확인할 디렉토리 추가
+add_subdirectory(lib)
+
+add_executable (program main.cc)
+
+# program 에 shape 를 링크
+target_link_libraries(program shape)
+
+라이브러리가 다른 라이브러리를 사용할 때
+shape에서 thread라이브러리를 사용한다고 하면
+
+리눅스의 경우 thread라이브러리를 사용하려면 pthread라이브러리를 링크시켜줘야함.
+
+# pthread 라이브러리를 링크
+target_link_libraries(shape PRIVATE pthread)
+
+    A 를 헤더 파일과 구현 내부에서 모두 사용한다면 : PUBLIC
+
+    A 를 내부 구현에서만 사용하고 헤더 파일에서는 사용하지 않는다면 : PRIVATE
+
+    A 를 헤더 파일에서만 사용하고 내부 구현에서는 사용하지 않는다면 : INTERFACE
+
+해당 라이브러리를 빌드하는데 필요한 파일 명시
+add_library(shape STATIC shape.cc color.cc circle.cc)
+
+그런데 일일히 명시하는게 귀찮다면 디렉토리 내의 모든파일을 라이브러리 빌드에 사용하도록 명령 가능
+#GLOB_RECURSE는 현 디렉토리와 모든 하위디렉토리까지 탐색하는 옵션
+#SRC_FILES 해당 파일들을 모두모아 SRC_FILES라는 변수를 구성
+#CONFIGURE_DEPENDS GLOB으로 불러오는 파일목록이 이전과 다를경우 CMake를 다시 실행해서 빌드파일을 재생성
+#라이브러리 내에 파일이 삭제or 추가되면 make했을때 알아서 cmake를 다시함.
+
+file(GLOB_RECURSE SRC_FILES CONFIGURE_DEPENDS 
+  ${CMAKE_CURRENT_SOURCE_DIR}/*.cc //현 디렉토리내의 모든 .cc파일
+)
+
+add_library(shape STATIC ${SRC_FILES})
+
+원하는 라이브러리를 설치하는 FetchContent
+파이썬의 PIP처럼 외부라이브러리들을 쉽게 설치하는 프로그램
+
+include(FetchContent)
+FetchContent_Declare(
+  Fmt
+  GIT_REPOSITORY "https://github.com/fmtlib/fmt"
+  GIT_TAG "7.1.3"
+  )
+FetchContent_MakeAvailable(Fmt)
+#fmt를 불러옴
+#FetchContent로 불러온 라이브러리는 프로젝트 전체에서 사용가능하다.
+target_link_libraries(shape PRIVATE pthread fmt)
+
+
