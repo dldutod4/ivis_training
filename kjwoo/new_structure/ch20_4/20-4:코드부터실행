@@ -1,0 +1,128 @@
+    main 함수가 호출되는 경로
+
+    전역 객체들의 생성자는 어떻게 호출되는지
+
+    링커 스크립트
+
+    crt 라이브러리들
+
+main함수가 호출되는 경로
+가장 먼저호출되는 함수는 main이 아니다.
+
+readelf로 elf파일 정보를 보면
+$ readelf -h test
+ELF Header:
+  Magic:   7f 45 4c 46 02 01 01 00 00 00 00 00 00 00 00 00 
+  Class:                             ELF64
+  Data:                              2''s complement, little endian
+  Version:                           1 (current)
+  OS/ABI:                            UNIX - System V
+  ABI Version:                       0
+  Type:                              DYN (Shared object file)
+  Machine:                           Advanced Micro Devices X86-64
+  Version:                           0x1
+  Entry point address:               0x1040
+  Start of program headers:          64 (bytes into file)
+  Start of section headers:          14608 (bytes into file)
+  Flags:                             0x0
+  Size of this header:               64 (bytes)
+  Size of program headers:           56 (bytes)
+  Number of program headers:         13
+  Size of section headers:           64 (bytes)
+  Number of section headers:         29
+  Section header string table index: 28
+
+0x1040에서 시작함
+0x1040에는 _start 함수가 있다.
+_start 함수가 가장먼저 호출되는 함수이다.
+_start함수가 하는 일은 __libc_start_main함수를 호출하기위해 전달할 인자를 준비하는 것.
+__libc_start_main은 c++로 작성된 프로그램을 시작하기위해 여러 환경을 준비하는 함수
+
+    프로그램의 Effective User Id 가 Real User Id 와 다를 때 필요한 보안 관련 체크를 수행
+
+    쓰레드 사용을 위한 준비
+
+    프로그램 실행 시 실행해야 하는 루틴들을 등록
+
+    프로그램 시작 시에 실행해야 할 초기화 함수를 호출
+
+    main 함수 호출
+
+    main 함수 리턴 시, 해당 리턴값으로 exit 을 호출
+
+위와 같은 기능을 수행한다.
+int __libc_start_main(int *(main)(int, char **, char **), int argc,
+                      char **ubp_av, void (*init)(void), void (*fini)(void),
+                      void (*rtld_fini)(void), void(*stack_end));
+
+실행할 main함수와 init함수 초기화함수를 인자로 받는데 __libc_csu_init함수이다.
+
+__libc_csu_init는 init__array_start ~ init_array_end까지 정의된 함수들을 돌아가며 호출
+이 값은 링커에의해 직접 제공된다.
+
+링커 스크립트
+링커 스크립트는 링커가 심볼들을 실행파일 내부에 여러 섹션에 배치할때 
+어떤식으로 배치할 지 알려주는 스크립트.
+섹션이름을 명시하고 중괄호 안에 배치할 심볼들을 써 넣으면된다.
+
+ PROVIDE_HIDDEN (__init_array_start = .);
+
+ .은 현재의 위치라는 의미로 __init_array_start에는 init_array섹션의 시작주소값이 들어가는 것.
+ __init_array_end에는 init_array섹션의 마지막주소값이 들어가는 것.
+
+init_array섹션을 보면
+첫번째원소는 frame_dummy를 호출
+frame_dummy는 register_tm_clones를 호출
+register_tm_clones은 한 블록안에 있는 일련의 작업들을 atomic하게 실행하기위한 도구
+syncronized {
+    std::cout << i << " -> ";
+    ++i;  // each call to f() obtains a unique value of i
+    std::cout << i << '\n';
+    return i;  // end synchronized block
+}
+위의 블록 안에서 일어나는 일들이 atomic하게 일어남
+mutex같은 동기화 장치 없이도 atomic하게 작동.
+
+두번째원소는 0x1204를 호출
+0x1204에는 _Z41__static_initialization_and_destruction_0ii를 호출하는데
+static객체들의 초기화를 위해 만들어진 함수임.
+
+컴파일 시 링크되는 파일들
+    Scrt1.o
+
+    crti.o
+
+    crtbeginS.o
+
+    libstdc++ (C++ 라이브러리)
+
+    libm (수학 관련 라이브러리)
+
+    libgcc_s
+
+    libgcc
+
+    libc (C 라이브러리)
+
+    libgcc_s
+
+    crtendS.o
+
+    crtn.o
+
+crt1.o에는
+_start가 정의되어 있고 libc를 사용하기위한 준비를 수행.
+Scrt1.o와 거의 동일한데 PIE(position independent executable)실행파일을 작성하는데 사용
+실행파일을 PIE형태로 만들면 실행파일이 메모리 어디에 로드되는지 알수없게 해
+메모리 관련 해킹 공격에서 좀 더 안전할 수 있습니다.
+
+ crtbegin.o
+
+그 다음으로 링크되는 파일로 crtbegin.o 이 있습니다. 이 파일은 __libc_start_main 에서 호출되는 여러가지 초기화 관련 함수들을 정의하고 있습니다.
+
+objdump 로 까보면 실제로 frame_dummy 나 register_tm_clones 와 같은 앞서 __libc_csu_init 에서 호출되는 함수들이 정의되어 있는 것
+
+libgcc
+GCC 에서 컴파일 되는 코드들에 반드시 링크되어야 하는 라이브러리 
+최적화레벨옵션을 켜서 libgcc의 코드를 호출하는대신 아예 치환시켜버릴 수도있는데
+그렇지않다면 libgcc에 정의된 함수를 호출할 수 있다.

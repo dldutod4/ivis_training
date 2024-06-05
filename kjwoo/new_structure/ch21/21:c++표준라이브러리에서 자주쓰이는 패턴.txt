@@ -1,0 +1,54 @@
+std::vector<int> vec(10, 0);
+0을 10개 만들기(Ten zeros)
+
+    std::vector<std::unique_ptr<A>> vec;
+vec.push_back(std::make_unique<A>());
+객체를 push해도 불필요한 복사나 생성이 이뤄지지않음 컴파일러가 최적화해서 완벽한 전달.
+
+    다른 컨테이너 원소로 벡터 생성하기
+
+        std::unordered_set<int>
+            s = {1, 2, 3, 4};
+
+// s 의 원소를 가지고 벡터 생성
+std::vector<int> vec(s.begin(), s.end());
+unordered_set의 원소들이 복사생성되어 vec를 만든다.
+
+    복사가 안되는 원소들 ex unique_ptr 같은 경우는
+#include <iostream>
+#include <memory>
+#include <vector>
+
+    int
+    main() {
+    std::vector<std::unique_ptr<int>> v1;
+
+    v1.push_back(std::make_unique<int>(1));
+    v1.push_back(std::make_unique<int>(2));
+    v1.push_back(std::make_unique<int>(3));
+
+    std::vector<std::unique_ptr<int>> v2(v1.begin(), v1.end());
+}
+
+컴파일 에러가 난다.대신 반복자로 하여금 이동을 수행하게할 수 있다.
+#include <iostream>
+#include <memory>
+#include <vector>
+
+    int main() {
+    std::vector<std::unique_ptr<int>> v1;
+
+    v1.push_back(std::make_unique<int>(1));
+    v1.push_back(std::make_unique<int>(2));
+    v1.push_back(std::make_unique<int>(3));
+
+    std::vector<std::unique_ptr<int>> v2(std::make_move_iterator(v1.begin()), std::make_move_iterator(v1.end()));
+
+    for (auto& i : v2) {
+        std::cout << *i << std::endl;
+    }
+}
+
+make_move_iterator는 입력받은 반복자를 이동반복자로 만들어준다.
+이동반복자는 복사대신 이동 연산을 수행하므로 unique_ptr과 같은 원소들을 이동시킬 수 있다.
+insert할 때도 요긴하게 사용가능.
