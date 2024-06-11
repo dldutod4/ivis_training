@@ -1,0 +1,85 @@
+6월 11일 화요일
+
+06. Other Topics - g.IPC
+
+IPC(RPC) concept
+
+분산 구조
+일반적인 Automotive system에서는 핵심 기능에 대해 서비스 형태로 그 기능을 제공하고 MHI Application은 Service에서 제공하는 정보를 사용하여 사용자에게 그 정보를 제공하는 형태로 구현이 된다. media를 예로 들면 media application은 재생, 중지, 이전 노래 재생 등과 같이 media 기능을 제어할 수 있는 control GUI를 제공, 현재 재생되는 노래의 상세 data 표시, 재생 요청 등을 수행하고 media sevice는 media control 요청을 받아 음원을 읽어 재생 및 출력, 지정된 storage의 media 탐색 리스트 제공 등을 담당하는 분리하여 역활을 담당한다. 이렇게 계층별로 분리하는 구조는 application이 비정상적으로 종료되어도 media는 계속 재생될 수 있으며 application이 복구 되었을 때 마지막 상태 그대로 복구 가능하다. 반대로 service가 비정상 종료되어도 사용자 화면은 유지되어 상태를 알 수 있으며 각자 개별로 업데이트가 가능하다. 만약 둘 중 하나를 다른 app이나 service로 교체할 때도 동일한 IPC interface를 사용하고 있으면 부품을 갈아 끼듯이 쉽게 교체가 가능하다.
+
+일반적인 IPC(RPC) 순서도
+클라이언트는 서비스에게 특정 기능에 대해 요청을 하고 서비슨느 요청 받은 기능에 대해 수행 후 결과를 다시 전달하는 형태로 구현된다. 클러이언트는 서비스에게 요청을 보내고 응답이 돌아와야지만 동작하는 방식을 sync 방식이라고 한다. 반대로 클라이언트(Caller)가 서비스에게 요청(Call procedure)을 보낸 후 기다리지 않고 바로 동작을 수행하는 방식을 async 방식이라 한다.보통 Reply는 Call procedure 단계에서 등록해 놓은 callback funtion을 Reply이 수신된 시점에 호출해주는 방식으로 동작한다.
+
+
+
+Qt
+Qt는 크로스 플랫폼 소프트웨어 프레임워크로 주로 애플리케이션 개발에 사용된다. 다양한 운영 체제와 플랫폼에서 작동하는 애플리케이션을 만들 수 있도록 도와주는 도구 라이브러리 모음이다. GUI 애플리케이션 말고도 네트워킹, 데이터베이스 접근, 파일 처리 등 다양한 기능을 제공한다.
+Qt는 windows, macos, linux, android, ios 등을 포함한 다양한 운영체제에서 작동가능하다. 하나의 코드베이스로 여러 플랫폼에서 작동하는 애플리케이션을 개발할 수 있으며 일반적으로 C++로 작성되어 C++의 성능과 유연성을 활용할 수 있으며 다른 언어도 사용이 가능하다. 복잡한 UI도 Qt에서 제공하는 GUI 툴킷을 사용하면 쉽게 개발이 가능하며 Qt Designer라는 도구를 사용하면 시각적으로 GUI를 설계할 수 있습니다. 시그널과 슬롯 매커니즘은 객체 간의 통신을 쉽게 만들어 준다. 이벤트 기반 프로그래밍이에서 특히 유용하다. 또한 그래픽, 네트워킹, 데이터베이스, XML처리, 쓰레딩 등 다양한 기능을 제공하는 라이브러리를 포함한다. 
+Qt Widgets은 전통적인 위젯 기반의 GUI 애플리케이션을 개발할 때 사용한다. Qt Quick은 QML 언어를 사용하며 현대적이고 동적인 사용자 인터페이스를 만들 수 있다. Qt Core는 비 GUI 기능들을 제공하는 기본적인 라이브러리이다. Qt Network는 네트워킹 기능을 제공한다. Qt Multimedia는 멀티미디어 처리 기능을 제공한다. Qt SQL는 데이터베이스 상호작용을 지원한다.
+현재 Qt는 임베디드 시스템에서도 자주 사용된다. 자동차 인포테이먼트 시스템, 의료 기기 등의 인터페이스 개발에도 할용중이다.
+
+
+Qt QML(Qt Meta Object Language)
+Qt QML은 Qt 프레임워크 내에서 동적이고 반응성이 높은 사용자 인터페이스를 설계하고 개발하는데 사용되는 선언적(객체와 속성을 선언적으로 정의하는 것) 프로그래밍 언어이다. 선언적 문법을 사용함으로써 UI 구성 요소를 직관적으로 표현하고 쉽게 수정할 수 있다. 또한 객체의 속정을 동적으로 바인딩(연결 또는 묶음)할 수 있어 속성간의 의존성을 자동으로 관리해 주어 코드의 간결성과 유지보수성을 높여준다. JavaScript를 완전히 통합하여 복잡한 로직과 사용자 정의의 기능을 구현할 수 있다. 애니메이션과 트랜지션을 손쉽게 구현할 수 있다. 컴포넌트를 모듈화하여 재사용할 수 있다. 
+QML은 속성 바인딩과 시그널, 슬롯 매커니즘을 통해 높은 반응성을 제공하며 선언적 문법과 높은 추상화를 통해 UI개발 속도를 향상시킨다. JavaScript 와의 통합으로 복잡한 로직을 유연하게 구현할 수 있으며 최신 사용자 인터페이스 트렌드와 요구를 쉽게 반영할 수 있다.
+현재 QML은 빠르고 직관적인 모바일 UI 개발이나 반응성 높고 경량화된 UI를 요구하는 임베디드 장치, 복잡한 데스크탑 어플래케이션에도 사용되는 매우 유요한 도구이다. 단 C++로 만들어진 디자인 로직보다는 느리다는 단점이 있다.
+
+Qt - Signal, Slot
+시그널과 슬롯 매커니즘은 객체 간의 통신을 처리하는 핵심 기능이다. 시그널은 특정 이벤트가 발생했음을 알리는 역할을 하나 실제 호출되는 것은 아니라 slot에 이벤트를 전달하는 역활만 수행한다. 슬롯은 시그널에 연결되어 시그널이 이벤트를 발생시켜 데이터를 슬롯에 전달하면 슬롯은 실제 일반 함수나 메서드처럼 작동하여 시그널에서 전달된 데이터를 처리한다. 시그널, 슬롯 매커니즘을 채택하면 객체 간의 상호 작용을 잘 캡슐화하여 코드의 모듈화와 재사용성을 높일 수 있고 당야한 객체가 서로 시그널과 슬롯을 통해 유연한 상호 작용이 가능하다. 무엇보다 이벤트 기반 프로그래밍을 쉽게 구현할 수 있어 GUI 애플리케이션을서 특히 유용하다.
+
+
+
+qt install
+
+아래의 사이트에서 qt-*.run을 다운 받는다
+https://download.qt.io/official_releases/online_installers/
+
+다운 받은 파일의 권한을 변경한다
+chmod a+x qt-unified-linux-x64-*-online.run
+
+설치 전에 qt에 필요한 라이브러리를 설치한다
+sudo apt install -y libxcb-xinerama0-dev build-essential openssl libssl-dev libgl1-mesa-dev libqt5x11extras5 libx11-xcb-dev libglu1-mesa-dev libxrender-dev libxi-dev libxkbcommon-dev libxkbcommon-x11-dev
+
+다운 받은 파일을 실행하여 설치한다.
+./qt-*.run
+
+qt 6.5 이상일 경우 아래 라이브러리를 추가로 설치한다
+sudo apt-get install libxcb-cursor0
+
+
+
+
+2. QML Basic
+
+2.1 QML 기초 문법
+QML은 HTML 구조와 흡사하다. QML은 기본적 구조는 상하 계층 구조로 되어있다. 예를 들어 사각형 영역안에 이미지를 출력한다고 가정해보자. 이 경우 먼저 사각형이 있고 그 내부에 이미지에 대한 정보와 그 이미지에 대한 텍스트들을 표현하는 방식으로 구성할 수 있다. 사격형이 상위에 있고 그 아래에 이미지와 텍스트가 있는 상하 구조이다. 
+
+2.2 Types
+QML에서 다른 QML 파일에서 구현한 것을 사용할 때 파일명이 QML 타입 명이 된다.
+Rectangle : Rectangle 타입은 사각형 영역에 아이템을 표시하기 위한 기능을 제공한다. 그리고 해당 타입은 중접된 형태로 사용할 수 있다.
+Image : 이미지를 표시하기 위한 아이템
+BorderImage : 지정한 영역에서 Background 이미지를 표시
+AnimatedImage : 움직이는 GIF와 같은 아이템을 표시하기 위한 아이템
+anchors : Qt C++ API에서 QVBoxLayout, QHBoxLayout 등 과 같은 레이아웃 사용해 위젯을 정렬 하는 것과 같이 QML에서는 anchors를 제공한다. 
+Gradient : 지정한 영역(Rectangle 같은 영역 등)에 색상의 범위(0.0~1.0까지)를 지정할 수 있는 기능을 제공한다.
+SystemPalette : Qt 어플리케이션 Palette에 접근하기 위한 기능을 제공한다.
+Screen : GUI가 로딩된 스크린에 관련된 정보를 제공한다.
+Repeater : 동일한 QML 타입을 연속으로 배치할 수 있다.
+Transformation : 이미지의 위치를 변경할 때 사용한다.
+Rotation : 이미지의 회전 시킬 때 사용한다.
+Accessible : 해당 모듈은 QML 애플리케이션에서 UI 요소에 접근성 속성을 추가하고 관리하는데 사용된다.
+Accessible.role은 사용자 정의 GUI 인터페이스가 어떤 종류의 인터페이스인지 선택한다.
+Accessible.onPressAction은 버튼을 클릭했을 때 발생하는 이벤트를 지정한다. 여기서 사용된 signal clicked를 사용했는데 C++에서 사용했던 signal과 도일하다. 
+
+2.3 Event
+MouseArea : C++ QWidget에서 사용했던 마우스 이벤트 시그널이 발생하면 연결된 Slot 함수가 실행되는 것과 같이 프로퍼티를 사용해 마우스 이벤트를 처리한다. contiainsMouse 프로퍼티를 사용하면 마우스 커서가 특정 영역 안에 있을 경우를 처리할 수 있다.
+Drag, DropArea : 특정 영역 안에서 마우스를 Drag해 DropArea 영역 안에 어떠한 객체가 들어오면 DropArea가 특정 명령을 수행하게 할 수 있다.
+TextInput : 키보드 입력 이벤트를 처리한다.
+KeyNavigation : 키보드의 상하좌우 방향키 이벤트를 처리할 수 있고 이외에 TAB키 이벤트를 처리하는 KeyNavigation.tab 프로퍼티도 제공한다.
+keys : 키보드 이벤트를 처리하며 onPressed와 onReleased를 시그널 프로퍼티로 사용 가능하다.
+Flickable : 화면상의 특정 타입을 Drag나 Flicked할 수 있는 속성을 부여해준다.
+Signal, Signal Handler : QML에서 시그널은 타입에서 발생하고 Signal Handler는 시그널과 연결되어 시그널이 발생한 이벤트를 처리하기 위한 기능을 제공한다.
+Connections : 해당 타입은 Signal Handler를 Connection 타입 내에서 처리할 수 있다.
+그 외에도 사용자가 정의하는 시그널을 아래와 같이 추가할 수 있다.
+signal <name>[([<type> <parameter name>[, ...]])]
+
